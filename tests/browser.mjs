@@ -126,7 +126,9 @@ try {
         .getByRole("button", { name: "시안-B.png 첨부 취소", exact: true })
         .waitFor();
     }
-    await entry.getByRole("button", { name: "저장", exact: true }).click();
+    await entry
+      .getByRole("button", { name: "저장 후 닫기", exact: true })
+      .click();
     await entry.waitFor({ state: "hidden" });
   }
   await add("신제품개발", "개발 전용");

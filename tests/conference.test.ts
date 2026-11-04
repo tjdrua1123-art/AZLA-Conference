@@ -4,6 +4,10 @@ import {
   addTask,
   boardSchema,
   carryMeeting,
+  deleteAgenda,
+  restoreAgenda,
+  previousAgenda,
+  agendaChangedFields,
   emptyBoard,
   newAgenda,
   newMeeting,
@@ -39,7 +43,7 @@ test("different fields of the same agenda merge; competing edits of the same fie
   remote.meetings[0].agenda[0].report = "다른 보고";
   assert.throws(() => mergeBoards(base, local, remote), MergeConflict);
 });
-test("next week carries reports and the existing unfinished task IDs, never prior approvals", () => {
+test("next week preserves editable reports and links existing unfinished tasks", () => {
   const b = fixture(),
     m = b.meetings[0];
   m.agenda[0].report = "샘플 검토";
@@ -58,8 +62,11 @@ test("next week carries reports and the existing unfinished task IDs, never prio
     status: "done",
   });
   const next = carryMeeting(withTasks, m, "2026-11-09");
-  assert.equal(next.meetings[0].agenda[0].previous, "샘플 검토");
-  assert.equal(next.meetings[0].agenda[0].report, "");
+  assert.equal(next.meetings[0].agenda[0].report, "샘플 검토");
+  assert.equal(
+    previousAgenda(next, next.meetings[0].agenda[0])?.report,
+    "샘플 검토",
+  );
   assert.equal(next.tasks.length, 2);
   assert.equal(next.tasks[0].id, withTasks.tasks[0].id);
   assert.equal(next.tasks[0].meetingIds.length, 2);
@@ -134,4 +141,108 @@ test("saved attachment paths cannot traverse into legacy/private buckets and exe
   valid.path = `azla/${crypto.randomUUID()}.png`;
   valid.mime = "text/html";
   assert.equal(boardSchema.safeParse(b).success, false);
+});
+
+test("weekly copies preserve reports, plans, decisions and files independently without duplicating an existing prepared week", () => {
+  const b = fixture();
+  const source = b.meetings[0];
+  const item = source.agenda[0];
+  item.report = "이전 보고";
+  item.plan = "기존 계획";
+  item.decision = "기존 결정";
+  item.visuals = [
+    {
+      id: crypto.randomUUID(),
+      path: crypto.randomUUID(),
+      name: "design.png",
+      mime: "image/png",
+      size: 10,
+      label: "시안",
+      status: "approved",
+      comment: "기존 승인",
+      reviewer: "검토자",
+      reviewedAt: "2026-11-02T01:00:00.000Z",
+      history: [],
+    },
+  ];
+  const next = carryMeeting(b, source, "2026-11-09");
+  const copy = next.meetings[0].agenda[0];
+  assert.equal(copy.report, item.report);
+  assert.equal(copy.plan, item.plan);
+  assert.equal(copy.decision, item.decision);
+  assert.notEqual(copy.id, item.id);
+  assert.notEqual(copy.visuals[0].id, item.visuals[0].id);
+  assert.equal(copy.visuals[0].path, item.visuals[0].path);
+  assert.ok(copy.visuals[0].carriedFrom);
+  assert.deepEqual(agendaChangedFields(copy, item), []);
+  copy.report = "이번 주 수정";
+  copy.visuals[0].comment = "추가 메모";
+  assert.equal(item.report, "이전 보고");
+  assert.equal(item.visuals[0].comment, "기존 승인");
+  const again = carryMeeting(next, source, "2026-11-09");
+  assert.equal(again.meetings.length, 2);
+  assert.equal(again.meetings[0].agenda[0].report, "이번 주 수정");
+  assert.equal(boardSchema.safeParse(again).success, true);
+  again.meetings[0].date = "2026-11-10";
+  const rescheduled = carryMeeting(again, source, "2026-11-09");
+  assert.equal(rescheduled.meetings.length, 2);
+  assert.equal(rescheduled.meetings[0].date, "2026-11-10");
+  assert.equal(boardSchema.safeParse(rescheduled).success, true);
+  const reviewed = reviewVisual(
+    copy.visuals[0],
+    "approved",
+    "재검토",
+    "검토자",
+  );
+  assert.equal(reviewed.carriedFrom, undefined);
+  assert.ok(copy.visuals[0].carriedFrom);
+});
+
+test("deletion is scoped to one week, restorable with files intact, excluded from future carry and conflicts with concurrent edits", () => {
+  const b = fixture();
+  const source = b.meetings[0];
+  const original = source.agenda[0];
+  original.report = "보존할 보고";
+  const next = carryMeeting(b, source, "2026-11-09");
+  const copied = next.meetings[0];
+  const deleted = deleteAgenda(next, copied.id, copied.agenda[0].id);
+  assert.equal(
+    deleted.meetings.find((m) => m.id === source.id)!.agenda[0].deletedAt,
+    undefined,
+  );
+  assert.equal(deleted.meetings[0].agenda[0].report, "보존할 보고");
+  const future = carryMeeting(deleted, deleted.meetings[0], "2026-11-16");
+  assert.equal(future.meetings[0].agenda.length, 1);
+  const restored = restoreAgenda(deleted, copied.id, copied.agenda[0].id);
+  assert.equal(restored.meetings[0].agenda[0].deletedAt, undefined);
+  assert.equal(restored.meetings[0].agenda[0].report, "보존할 보고");
+  const remote = structuredClone(next);
+  remote.meetings[0].agenda[0].report = "다른 직원의 수정";
+  assert.throws(() => mergeBoards(next, deleted, remote), MergeConflict);
+});
+
+test("two staff preparing the same week merge into one prepared meeting even after JSON object-key reordering", () => {
+  const base = fixture();
+  const first = carryMeeting(base, base.meetings[0], "2026-11-09");
+  const second = carryMeeting(
+    structuredClone(base),
+    structuredClone(base.meetings[0]),
+    "2026-11-09",
+  );
+  assert.equal(first.meetings[0].id, second.meetings[0].id);
+  assert.equal(first.meetings[0].agenda[0].id, second.meetings[0].agenda[0].id);
+  const reversed = (value: unknown): unknown =>
+    Array.isArray(value)
+      ? value.map(reversed)
+      : value && typeof value === "object"
+        ? Object.fromEntries(
+            Object.entries(value)
+              .reverse()
+              .map(([k, v]) => [k, reversed(v)]),
+          )
+        : value;
+  const remote = boardSchema.parse(reversed(first));
+  const merged = mergeBoards(base, second, remote);
+  assert.equal(merged.meetings.length, 2);
+  assert.equal(merged.meetings[0].id, first.meetings[0].id);
 });

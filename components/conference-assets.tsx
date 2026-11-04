@@ -117,6 +117,12 @@ export function ReviewDialog({
           <p className="muted">
             시안을 확인하고 대표님 의견과 검토 결과를 기록하세요.
           </p>
+          {file.carriedFrom && (
+            <p className="notice">
+              {file.carriedFrom.date} 회의에서 이어받은 자료와 검토 결과입니다.
+              이번 회의에서 다시 검토하려면 아래 결과를 반영하세요.
+            </p>
+          )}
           <label>
             검토 결과
             <select
@@ -170,8 +176,8 @@ export function ReviewDialog({
             <Check size={16} /> 검토 결과 반영
           </button>
           <p className="muted helper">
-            반영한 뒤 상단 ‘회의 저장’을 눌러 보관하세요. 이름은 직접 기입하는
-            기록이며 전자서명이 아닙니다.
+            반영하면 자동 저장됩니다. 이름은 직접 기입하는 기록이며 전자서명이
+            아닙니다.
           </p>
           {file.history.length > 0 && (
             <div className="review-history">

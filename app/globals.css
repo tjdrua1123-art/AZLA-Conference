@@ -4338,3 +4338,1102 @@ label > select {
     display: none !important;
   }
 }
+/* Readable editing and weekly carry-forward. */
+.entry-backdrop {
+  padding: 14px;
+}
+.entry-fullscreen {
+  width: min(1680px, 100%);
+  height: calc(100dvh - 28px);
+  max-height: none;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.entry-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e3eadd;
+  flex-shrink: 0;
+}
+.entry-topbar .eyebrow {
+  font-size: 8px;
+  margin-bottom: 3px;
+}
+.entry-topbar h2 {
+  font-size: 19px;
+}
+.entry-topbar h2 small {
+  font-size: 10px;
+  font-weight: 400;
+  margin-left: 15px;
+  color: #899f7c;
+}
+.entry-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.entry-top-actions > span {
+  font-size: 11px;
+  color: #9aac8d;
+}
+.entry-fullscreen > form {
+  padding: 0;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  flex-direction: column;
+}
+.entry-fields {
+  border: 0;
+  margin: 0;
+  padding: 0 24px;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.entry-metadata {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.8fr) minmax(150px, 1fr) minmax(
+      260px,
+      2fr
+    );
+  gap: 18px;
+  flex-shrink: 0;
+  padding: 8px 0 15px;
+}
+.entry-metadata label {
+  margin: 5px 0;
+  font-size: 11px;
+  color: #789067;
+}
+.entry-metadata input,
+.entry-metadata select {
+  font-size: 14px;
+  padding: 9px 11px;
+  margin-top: 5px;
+}
+.entry-writing-panels {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr 1fr;
+  gap: 18px;
+  min-height: 160px;
+  flex: 1;
+  overflow: hidden;
+}
+.entry-writing-panels.focused {
+  grid-template-columns: 1fr;
+}
+.entry-writing-panel {
+  border: 1px solid #dfe8d6;
+  background: #fff;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.entry-writing-panel > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #f4f8ed;
+  padding: 13px 16px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #e3ebdb;
+}
+.entry-writing-panel h3 {
+  font-size: 14px;
+  color: #48693a;
+  font-weight: 600;
+}
+.entry-writing-panel h3 span {
+  font-size: 10px;
+  color: #9ab587;
+  margin-right: 8px;
+}
+.entry-writing-panel .text-button {
+  font-size: 10px;
+}
+.entry-writing-panel textarea {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  resize: none;
+  border: 0;
+  border-radius: 0;
+  padding: 18px;
+  font-size: 15px;
+  line-height: 1.9;
+  color: #263c24;
+  background: #fff;
+  box-shadow: none;
+  overflow: auto;
+}
+.entry-attachment-bar {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px 0;
+  flex-shrink: 0;
+  max-height: 84px;
+  overflow: hidden;
+}
+.entry-attachment-bar .file-button {
+  flex-shrink: 0;
+  font-size: 11px;
+}
+.entry-attachment-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow: auto;
+  min-width: 0;
+  padding: 3px;
+}
+.entry-attachment-list > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  padding: 5px 8px;
+  border: 1px solid #e0e9d8;
+  border-radius: 5px;
+  background: #f9fbf5;
+  white-space: nowrap;
+}
+.entry-attachment-list small {
+  font-size: 9px;
+  color: #9db08c;
+  white-space: nowrap;
+}
+.entry-fixed-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 24px !important;
+  border-top: 1px solid #dfe7d6;
+  background: #f8fbf4;
+  flex-shrink: 0;
+  font-size: 11px;
+  letter-spacing: 0;
+}
+.entry-fixed-footer > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.entry-fixed-footer > div:first-child {
+  color: #8da278;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.entry-fixed-footer small {
+  font-size: 9px;
+  color: #b0bea4;
+}
+.entry-saved {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #5b8850;
+}
+.entry-fixed-footer .primary,
+.entry-fixed-footer .secondary {
+  font-size: 12px;
+  padding: 10px 16px;
+}
+.entry-fields > .error {
+  margin-bottom: 10px;
+  max-height: 60px;
+  overflow: auto;
+  flex-shrink: 0;
+  font-size: 11px;
+}
+.entry-compare-mode {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+.comparison-field-tabs {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  border-bottom: 1px solid #e0e8d8;
+  padding: 0 0 10px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+.comparison-field-tabs button {
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 5px;
+  font-size: 12px;
+  padding: 8px 15px;
+  color: #879f73;
+}
+.comparison-field-tabs .active {
+  background: #eaf3e1;
+  border-color: #d6e5c8;
+  color: #5f834b;
+}
+.entry-comparison-panes {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  min-height: 0;
+}
+.entry-comparison-panes label {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  color: #77955f;
+  font-size: 12px;
+}
+.entry-comparison-panes textarea {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  resize: none;
+  font-size: 15px;
+  line-height: 1.9;
+  background: #fff;
+  padding: 18px;
+  margin: 0;
+}
+.entry-comparison-panes textarea[readonly] {
+  background: #f6f8f1;
+  color: #87977b;
+}
+.readable-text {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #31492c;
+}
+.readable-lines {
+  max-height: 7.2em;
+  overflow: hidden;
+}
+.readable-lines > p {
+  font-size: inherit !important;
+  line-height: inherit;
+  white-space: pre-wrap;
+  margin: 0;
+  min-height: 1.8em;
+}
+.readable-text.expanded .readable-lines {
+  max-height: none;
+  overflow: visible;
+}
+.changed-line {
+  background: #edf7df;
+  box-shadow: inset 2px 0 #92b777;
+  padding-left: 7px !important;
+  margin-left: -7px !important;
+}
+.text-change-tag {
+  font-size: 9px;
+  color: #84a463;
+  display: inline-block;
+  margin-top: 5px;
+  margin-right: 9px;
+}
+.expand-text {
+  font-size: 10px;
+  color: #719057;
+  margin-top: 5px;
+}
+.reading-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin: -8px 0 13px;
+  font-size: 11px;
+  color: #8ca07b;
+}
+.reading-controls .consent {
+  margin: 0;
+  font-size: 11px;
+  gap: 6px;
+}
+.reading-controls .consent input {
+  margin: 0;
+  width: 12px;
+  height: 12px;
+}
+.reading-hint {
+  margin-left: auto;
+  color: #a0b08f;
+  font-size: 10px;
+}
+.carry-change-badge {
+  display: block;
+  border: 1px solid #e2e9dc;
+  background: #f3f7ee;
+  color: #91a67c;
+  border-radius: 4px;
+  font-size: 9px;
+  padding: 3px 7px;
+  margin-top: 8px;
+  cursor: pointer;
+}
+.carry-change-badge.modified {
+  background: #eaf6de;
+  color: #6d964e;
+  border-color: #d5e7c2;
+}
+.delete-entry-button {
+  color: #b7a299;
+}
+.delete-entry-button:hover {
+  color: #c27d6e;
+  background: #fff0eb;
+}
+.trash-dialog {
+  width: 760px;
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+}
+.trash-dialog .section-heading p {
+  font-size: 11px;
+  color: #9bac8c;
+  margin-top: 7px;
+}
+.trash-list {
+  overflow: auto;
+  padding: 5px 24px 20px;
+}
+.trash-list article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 19px 0;
+  border-bottom: 1px solid var(--line);
+}
+.trash-list article > div {
+  min-width: 0;
+  flex: 1;
+}
+.trash-list strong {
+  display: block;
+  font-size: 14px;
+  color: #59734c;
+}
+.trash-list small {
+  font-size: 10px;
+  color: #a0b18f;
+  display: block;
+  margin: 5px 0;
+}
+.trash-list p {
+  font-size: 11px;
+  color: #9aaa8c;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.agenda-change-dialog {
+  width: 1200px;
+  height: min(750px, 88dvh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.agenda-comparison {
+  padding: 20px 25px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.before-after {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  flex: 1;
+  min-height: 0;
+}
+.before-after > section {
+  border: 1px solid #e0e8d7;
+  border-radius: 7px;
+  padding: 17px;
+  overflow: auto;
+}
+.before-after h3 {
+  font-size: 12px;
+  margin-bottom: 15px;
+  color: #839c6e;
+}
+.comparison-source {
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #8a997e;
+}
+.before-after .readable-text {
+  font-size: 14px;
+}
+.meeting-table-wrap {
+  max-height: calc(100dvh - 340px);
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+.meeting-report-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+}
+.meeting-report-table th {
+  position: sticky;
+  top: 0;
+  background: #eaf1e3;
+}
+.meeting-report-table th:first-child {
+  width: 18%;
+}
+.meeting-report-table th:nth-child(2) {
+  width: 38%;
+}
+.meeting-report-table th:nth-child(3) {
+  width: 23%;
+}
+.meeting-report-table th:nth-child(4) {
+  width: 17%;
+}
+.meeting-report-table th:last-child {
+  width: 4%;
+}
+.meeting-report-table td {
+  padding: 16px 20px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #31452c;
+}
+.meeting-report-table td:first-child strong {
+  font-size: 14px;
+  color: #284624;
+}
+.meeting-report-table td > textarea {
+  font-size: 14px;
+  line-height: 1.8;
+  padding: 12px;
+  min-height: 130px;
+  resize: vertical;
+}
+.meeting-report-table .table-attachments {
+  margin-top: 10px;
+}
+.meeting-report-table .table-attachments .visual-image {
+  width: 76px;
+  height: 56px;
+}
+.meeting-app-header {
+  padding: 12px 28px;
+  gap: 18px;
+}
+.meeting-brand {
+  font-size: 26px;
+}
+.meeting-brand > span {
+  font-size: 12px;
+}
+.meeting-page {
+  padding: 15px 28px 25px;
+}
+.meeting-page-title {
+  margin: 0 0 15px;
+  gap: 15px;
+}
+.meeting-page-title h1 {
+  font-size: 25px;
+}
+.meeting-page-title .eyebrow {
+  display: none;
+}
+.meeting-page-title p {
+  margin-top: 4px;
+  font-size: 11px;
+}
+.meeting-page .local-banner {
+  padding: 7px 11px;
+  font-size: 10px;
+  margin-bottom: 12px;
+}
+.meeting-tabs {
+  margin: 12px 0 19px;
+  padding: 4px;
+}
+.meeting-tabs > button {
+  padding: 10px 14px;
+  font-size: 13px;
+}
+.category-heading {
+  margin: 13px 0 17px;
+}
+.category-heading h2 {
+  font-size: 18px;
+}
+.category-heading p {
+  font-size: 10px;
+}
+.meeting-footer {
+  margin-top: 16px;
+  padding-top: 12px;
+}
+.design-agenda .section-heading p {
+  font-size: 13px;
+  line-height: 1.8;
+}
+.design-agenda .design-card-body p {
+  font-size: 12px;
+  line-height: 1.8;
+}
+.meeting-page .save-message {
+  margin: 7px 0 12px;
+  font-size: 11px;
+}
+.entry-fullscreen .selected {
+  background: #eaf3e1;
+  border-color: #d0e0c2;
+}
+@media (min-width: 1700px) {
+  .entry-fullscreen {
+    width: 1680px;
+  }
+  .entry-writing-panel textarea,
+  .entry-comparison-panes textarea {
+    font-size: 16px;
+  }
+  .meeting-report-table .readable-text {
+    font-size: 15px;
+  }
+  .meeting-page {
+    padding-top: 20px;
+  }
+  .meeting-report-table td {
+    padding: 18px 23px;
+  }
+}
+@media (max-width: 1100px) {
+  .entry-topbar {
+    padding: 13px 18px;
+  }
+  .entry-topbar h2 {
+    font-size: 17px;
+  }
+  .entry-topbar h2 small {
+    display: none;
+  }
+  .entry-fields {
+    padding: 0 18px;
+  }
+  .entry-metadata {
+    gap: 12px;
+    grid-template-columns: minmax(110px, 0.7fr) minmax(110px, 1fr) minmax(
+        200px,
+        1.7fr
+      );
+  }
+  .entry-writing-panels {
+    gap: 12px;
+    grid-template-columns: 1.2fr 1fr 1fr;
+  }
+  .entry-writing-panel textarea {
+    padding: 14px;
+    font-size: 14px;
+  }
+  .entry-writing-panel > div {
+    padding: 11px;
+  }
+  .entry-writing-panel h3 {
+    font-size: 12px;
+  }
+  .entry-writing-panel .text-button {
+    font-size: 9px;
+  }
+  .entry-fixed-footer {
+    padding: 12px 18px !important;
+  }
+  .reading-hint {
+    display: none;
+  }
+  .meeting-table-wrap {
+    max-height: calc(100dvh - 370px);
+  }
+  .meeting-app-header {
+    padding: 12px 20px;
+  }
+  .meeting-page {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+@media (max-width: 800px) {
+  .entry-backdrop {
+    padding: 5px;
+  }
+  .entry-fullscreen {
+    height: calc(100dvh - 10px);
+    width: 100%;
+  }
+  .entry-topbar {
+    padding: 11px 13px;
+    gap: 10px;
+  }
+  .entry-topbar h2 {
+    font-size: 15px;
+  }
+  .entry-topbar .eyebrow {
+    font-size: 7px;
+  }
+  .entry-top-actions {
+    gap: 4px;
+  }
+  .entry-top-actions .secondary {
+    font-size: 9px;
+    padding: 7px;
+  }
+  .entry-top-actions > span {
+    display: none;
+  }
+  .entry-fields {
+    padding: 0 12px;
+  }
+  .entry-metadata {
+    gap: 7px;
+    grid-template-columns: 1fr 1fr 1.7fr;
+    padding: 7px 0 10px;
+  }
+  .entry-metadata label {
+    font-size: 9px;
+  }
+  .entry-metadata input,
+  .entry-metadata select {
+    padding: 7px;
+    font-size: 11px;
+  }
+  .entry-writing-panels {
+    grid-template-columns: 1fr;
+    overflow: auto;
+    min-height: 130px;
+    gap: 10px;
+  }
+  .entry-writing-panel {
+    min-height: 180px;
+    flex-shrink: 0;
+  }
+  .entry-writing-panel textarea {
+    min-height: 120px;
+    font-size: 14px;
+  }
+  .entry-writing-panels.focused {
+    overflow: hidden;
+  }
+  .entry-writing-panels.focused > .entry-writing-panel {
+    height: 100%;
+    min-height: 0;
+  }
+  .entry-attachment-bar {
+    padding: 8px 0;
+    gap: 8px;
+    max-height: 55px;
+  }
+  .entry-attachment-bar .file-button {
+    font-size: 9px;
+    padding: 7px;
+    gap: 4px;
+  }
+  .entry-attachment-list > span {
+    font-size: 9px;
+  }
+  .entry-attachment-list small {
+    font-size: 8px;
+  }
+  .entry-fixed-footer {
+    padding: 10px 12px !important;
+    gap: 8px;
+  }
+  .entry-fixed-footer > div {
+    gap: 6px;
+  }
+  .entry-fixed-footer .primary,
+  .entry-fixed-footer .secondary {
+    font-size: 10px;
+    padding: 9px;
+  }
+  .entry-fixed-footer > div:first-child {
+    font-size: 9px;
+  }
+  .entry-fixed-footer small {
+    display: none;
+  }
+  .entry-comparison-panes {
+    gap: 10px;
+  }
+  .entry-comparison-panes label {
+    font-size: 10px;
+  }
+  .entry-comparison-panes textarea {
+    font-size: 12px;
+    padding: 10px;
+  }
+  .comparison-field-tabs button {
+    font-size: 10px;
+    padding: 7px 10px;
+  }
+  .reading-controls {
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 10px;
+    margin-top: 0;
+  }
+  .reading-controls .consent {
+    font-size: 10px;
+  }
+  .reading-controls .text-button {
+    font-size: 10px;
+  }
+  .reading-controls .reading-hint {
+    display: none;
+  }
+  .meeting-table-wrap {
+    max-height: none;
+  }
+  .before-after {
+    grid-template-columns: 1fr;
+    overflow: auto;
+    display: block;
+  }
+  .before-after > section {
+    max-height: 45vh;
+    margin-bottom: 13px;
+  }
+  .meeting-page {
+    padding: 15px;
+  }
+  .meeting-report-table .readable-text {
+    font-size: 13px;
+  }
+  .meeting-report-table td {
+    padding: 15px;
+  }
+  .trash-list {
+    padding: 0 16px 20px;
+  }
+  .trash-list article {
+    gap: 10px;
+  }
+  .trash-list strong {
+    font-size: 12px;
+  }
+}
+@media (max-width: 550px) {
+  .meeting-app-header {
+    padding: 12px;
+  }
+  .meeting-page {
+    padding: 12px;
+  }
+  .entry-topbar h2 {
+    font-size: 14px;
+  }
+  .entry-topbar .eyebrow {
+    display: none;
+  }
+  .entry-fixed-footer > div:first-child {
+    max-width: 100px;
+  }
+  .entry-fixed-footer .secondary,
+  .entry-fixed-footer .primary {
+    padding: 8px;
+    font-size: 9px;
+  }
+  .entry-top-actions .icon-button {
+    padding: 4px;
+  }
+  .entry-top-actions svg {
+    width: 16px;
+    height: 16px;
+  }
+  .entry-metadata label {
+    margin: 3px 0;
+  }
+  .meeting-footer {
+    font-size: 9px;
+  }
+  .reading-controls {
+    gap: 10px;
+  }
+  .entry-writing-panel textarea {
+    font-size: 14px;
+  }
+  .entry-writing-panel h3 {
+    font-size: 12px;
+  }
+  .entry-attachment-list {
+    gap: 5px;
+  }
+}
+@media print {
+  .meeting-table-wrap {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .meeting-report-table thead,
+  .meeting-report-table th {
+    position: static;
+  }
+  .readable-lines {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .expand-text,
+  .reading-controls,
+  .carry-change-badge,
+  .text-change-tag,
+  .delete-entry-button {
+    display: none !important;
+  }
+  .changed-line {
+    background: transparent;
+    box-shadow: none;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .meeting-report-table .readable-text {
+    font-size: 10pt;
+  }
+  .entry-backdrop {
+    display: none !important;
+  }
+}
+.mobile-entry-fields {
+  display: none;
+}
+@media (min-width: 801px) {
+  .meeting-app {
+    height: 100dvh;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .meeting-app-header {
+    flex-shrink: 0;
+  }
+  .meeting-page {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .meeting-page-title,
+  .meeting-page .local-banner,
+  .meeting-tools,
+  .meeting-tabs,
+  .category-heading,
+  .reading-controls,
+  .meeting-footer,
+  .meeting-page > .save-message,
+  .meeting-page > .notice,
+  .meeting-page > .error {
+    flex-shrink: 0;
+  }
+  .meeting-table-wrap {
+    flex: 1;
+    min-height: 130px;
+    max-height: none;
+    overflow: auto;
+  }
+  .category-heading > div:first-child p {
+    display: none;
+  }
+  .category-heading {
+    margin: 8px 0 12px;
+  }
+  .category-heading h2 {
+    font-size: 17px;
+  }
+  .meeting-page-title {
+    margin-bottom: 10px;
+  }
+  .meeting-page-title h1 {
+    font-size: 24px;
+  }
+  .meeting-tabs {
+    margin-bottom: 14px;
+  }
+  .reading-controls {
+    margin-top: 0;
+    margin-bottom: 10px;
+    min-height: 22px;
+  }
+  .add-table-row {
+    padding: 8px;
+    margin-top: 9px;
+    flex-shrink: 0;
+  }
+  .meeting-footer {
+    padding-top: 8px;
+    margin-top: 10px;
+    min-height: 26px;
+  }
+  .design-gallery {
+    flex: 1;
+    min-height: 130px;
+    overflow: auto;
+    align-content: start;
+    grid-auto-rows: max-content;
+  }
+  .recording-tab {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding-right: 4px;
+  }
+  .category-empty {
+    flex: 1;
+    min-height: 100px;
+    padding: 25px;
+  }
+  .welcome-card {
+    flex: 1;
+    min-height: 120px;
+    overflow: auto;
+  }
+  .meeting-page > .notice {
+    max-height: 75px;
+    overflow: auto;
+  }
+}
+@media (max-width: 800px) {
+  .mobile-entry-fields {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 9px;
+    flex-shrink: 0;
+  }
+  .mobile-entry-fields > button {
+    flex: 1;
+    border: 1px solid #e1ead9;
+    border-radius: 5px;
+    background: #f9fbf5;
+    font-size: 10px;
+    padding: 8px;
+    color: #8da377;
+  }
+  .mobile-entry-fields > button.active {
+    background: #eaf3e1;
+    border-color: #ccdeb9;
+    color: #5d8247;
+  }
+  .entry-writing-panel .text-button {
+    display: none;
+  }
+}
+@media print {
+  .meeting-app {
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+  .meeting-page {
+    display: block !important;
+    overflow: visible !important;
+  }
+  .meeting-table-wrap {
+    min-height: 0;
+    overflow: visible !important;
+  }
+  .mobile-entry-fields {
+    display: none !important;
+  }
+}
+
+/* Keep the meeting sheet as the main desktop workspace. */
+@media (min-width: 801px) {
+  .meeting-app-header {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .meeting-page {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .meeting-page-title > div:first-child {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    min-width: 0;
+  }
+  .meeting-page-title h1 {
+    font-size: 22px;
+  }
+  .meeting-page-title p {
+    margin: 0;
+    white-space: nowrap;
+  }
+  .meeting-page .local-banner {
+    margin-bottom: 8px;
+  }
+  .meeting-tabs {
+    margin-top: 0;
+    margin-bottom: 8px;
+  }
+  .category-heading {
+    margin: 0 0 8px;
+  }
+  .meeting-page > .save-message {
+    position: fixed;
+    bottom: 38px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    margin: 0;
+    padding: 9px 16px;
+    background: #fff;
+    border: 1px solid #dce8d5;
+    border-radius: 7px;
+    box-shadow: 0 3px 14px #203a1c14;
+    pointer-events: none;
+    max-width: calc(100vw - 48px);
+  }
+  .meeting-page .add-table-row {
+    display: none;
+  }
+}
+@media (min-width: 801px) and (max-width: 1150px) {
+  .meeting-page-title > div:first-child {
+    display: block;
+  }
+  .meeting-page-title h1 {
+    font-size: 20px;
+  }
+  .meeting-page-title p {
+    margin-top: 4px;
+  }
+}
+@media print {
+  .meeting-page > .save-message {
+    display: none !important;
+  }
+}

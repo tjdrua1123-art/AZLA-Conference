@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { v5 as uuidV5 } from "uuid";
 import { nextMonday } from "./types";
 import { aiSchema } from "./ai";
 export const reviewLabels = {
@@ -25,6 +26,7 @@ export function isCategory(value: string): value is Category {
 const uid = z.uuid();
 const short = z.string().max(500);
 export const visualSchema = z.object({
+  carriedFrom: z.object({ date: z.iso.date(), visualId: uid }).optional(),
   sequence: z.number().int().nonnegative().optional(),
   id: uid,
   name: short,
@@ -60,6 +62,10 @@ export const visualSchema = z.object({
 });
 export type Visual = z.infer<typeof visualSchema>;
 export const agendaSchema = z.object({
+  deletedAt: z.iso.datetime().optional(),
+  carriedFrom: z
+    .object({ meetingId: uid, agendaId: uid, date: z.iso.date() })
+    .optional(),
   id: uid,
   title: short,
   product: short,
@@ -120,6 +126,7 @@ export function meetingFiles(meeting: Session): Visual[] {
   ];
 }
 export const sessionSchema = z.object({
+  copiedFrom: uid.optional(),
   id: uid,
   title: z.string().min(1).max(200),
   date: z.iso.date(),
@@ -217,30 +224,134 @@ export function insertMeeting(board: Board, meeting: Session): Board {
   };
 }
 export function carryMeeting(board: Board, from: Session, date: string): Board {
+  const meetingId = uuidV5(date, from.id);
+  const existing = board.meetings.find(
+    (m) => m.id === meetingId || (m.copiedFrom === from.id && m.date === date),
+  );
+  if (existing)
+    return {
+      ...board,
+      meetings: [
+        existing,
+        ...board.meetings.filter((m) => m.id !== existing.id),
+      ],
+    };
   const m: Session = {
     ...newMeeting(date),
+    id: meetingId,
+    title: from.title,
     department: from.department,
     attendees: from.attendees,
-    agenda: from.agenda.map((a) => ({
-      ...newAgenda(a.title),
-      product: a.product,
-      category: a.category,
-      owner: a.owner,
-      partner: a.partner,
-      previous: a.report,
-      source: `${from.date} 회의에서 이월`,
-    })),
+    copiedFrom: from.id,
+    agenda: from.agenda
+      .filter((a) => !a.deletedAt)
+      .map((a) => ({
+        ...structuredClone(a),
+        id: uuidV5(a.id, meetingId),
+        previous: "",
+        source: `${from.date} 회의에서 이어받음`,
+        carriedFrom: { meetingId: from.id, agendaId: a.id, date: from.date },
+        visuals: a.visuals.map((v) => ({
+          ...structuredClone(v),
+          id: uuidV5(v.id, uuidV5(a.id, meetingId)),
+          carriedFrom: v.carriedFrom ?? { date: from.date, visualId: v.id },
+        })),
+      })),
   };
+  return insertMeeting(board, m);
+}
+export function previousAgenda(
+  board: Board,
+  agenda: Agenda,
+): Agenda | undefined {
+  if (!agenda.carriedFrom) return;
+  return board.meetings
+    .find((m) => m.id === agenda.carriedFrom!.meetingId)
+    ?.agenda.find((a) => a.id === agenda.carriedFrom!.agendaId);
+}
+export function agendaChangedFields(
+  agenda: Agenda,
+  previous: Agenda | undefined,
+): string[] {
+  if (!previous) return [];
+  const keys = [
+    "title",
+    "product",
+    "category",
+    "report",
+    "plan",
+    "decision",
+  ] as const;
+  const fields: string[] = keys
+    .filter((k) => agenda[k] !== previous[k])
+    .map(
+      (k) =>
+        ({
+          title: "제목",
+          product: "제품",
+          category: "분류",
+          report: "진행 내용",
+          plan: "다음 계획",
+          decision: "회의 결정",
+        })[k],
+    );
+  const visualInfo = (a: Agenda) =>
+    a.visuals.map((v) => [
+      v.carriedFrom?.visualId ?? v.id,
+      v.label,
+      v.status,
+      v.comment,
+      v.reviewer,
+    ]);
+  if (
+    JSON.stringify(visualInfo(agenda)) !== JSON.stringify(visualInfo(previous))
+  )
+    fields.push("첨부·검토");
+  return fields;
+}
+export function deleteAgenda(
+  board: Board,
+  meetingId: string,
+  agendaId: string,
+  at = new Date().toISOString(),
+): Board {
   return {
     ...board,
-    meetings: [m, ...board.meetings],
-    tasks: board.tasks.map((t) =>
-      t.status !== "done" &&
-      t.meetingIds.some((id) =>
-        board.meetings.some((old) => old.id === id && old.date < date),
-      )
-        ? { ...t, meetingIds: [...new Set([...t.meetingIds, m.id])] }
-        : t,
+    meetings: board.meetings.map((m) =>
+      m.id === meetingId
+        ? {
+            ...m,
+            status: "draft",
+            reviewed: false,
+            agenda: m.agenda.map((a) =>
+              a.id === agendaId ? { ...a, deletedAt: at } : a,
+            ),
+          }
+        : m,
+    ),
+  };
+}
+export function restoreAgenda(
+  board: Board,
+  meetingId: string,
+  agendaId: string,
+): Board {
+  return {
+    ...board,
+    meetings: board.meetings.map((m) =>
+      m.id === meetingId
+        ? {
+            ...m,
+            status: "draft",
+            reviewed: false,
+            agenda: m.agenda.map((a) => {
+              if (a.id !== agendaId) return a;
+              const copy = { ...a };
+              delete copy.deletedAt;
+              return copy;
+            }),
+          }
+        : m,
     ),
   };
 }
@@ -288,6 +399,7 @@ export function reviewVisual(
   const at = new Date().toISOString();
   return {
     ...v,
+    carriedFrom: undefined,
     status,
     comment,
     reviewer,

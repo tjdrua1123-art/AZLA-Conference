@@ -1,6 +1,6 @@
 {
   "name": "azla-conference",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "scripts": {
     "dev": "next dev --hostname 0.0.0.0",
@@ -11,7 +11,8 @@
     "test:browser": "node tests/browser.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:access": "node tests/shared-access.mjs"
+    "test:access": "node tests/shared-access.mjs",
+    "test:readability": "node tests/readability.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.90.0",
@@ -20,6 +21,7 @@
     "next": "^16.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "uuid": "^14.0.3",
     "zod": "^4.0.0"
   },
   "devDependencies": {

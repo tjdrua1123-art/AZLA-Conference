@@ -1,6 +1,22 @@
 import { boardSchema, type Board } from "./conference";
-const equal = (a: unknown, b: unknown) =>
-  JSON.stringify(a) === JSON.stringify(b);
+function equal(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (Array.isArray(a) && Array.isArray(b))
+    return a.length === b.length && a.every((v, i) => equal(v, b[i]));
+  if (record(a) && record(b)) {
+    const x = Object.keys(a)
+        .filter((k) => a[k] !== undefined)
+        .sort(),
+      y = Object.keys(b)
+        .filter((k) => b[k] !== undefined)
+        .sort();
+    return (
+      x.length === y.length &&
+      x.every((k, i) => k === y[i] && equal(a[k], b[k]))
+    );
+  }
+  return false;
+}
 export class MergeConflict extends Error {
   constructor(public field: string) {
     super(
@@ -23,6 +39,14 @@ function merge(
   if (equal(local, remote) || equal(remote, base)) return local;
   if (equal(local, base)) return remote;
   if (record(base) && record(local) && record(remote)) {
+    if (
+      typeof base.report === "string" &&
+      Array.isArray(base.visuals) &&
+      local.deletedAt !== remote.deletedAt &&
+      (local.deletedAt !== base.deletedAt ||
+        remote.deletedAt !== base.deletedAt)
+    )
+      throw new MergeConflict(path + " · 삭제/복원과 내용 수정");
     const out: Record<string, unknown> = {};
     for (const key of new Set([
       ...Object.keys(base),

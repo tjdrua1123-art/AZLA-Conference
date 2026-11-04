@@ -21,6 +21,9 @@ import {
   Search,
   Square,
   Upload,
+  Trash2,
+  RotateCcw,
+  Columns2,
   X,
 } from "lucide-react";
 import {
@@ -28,6 +31,10 @@ import {
   boardSchema,
   categoryLabels,
   carryMeeting,
+  agendaChangedFields,
+  previousAgenda,
+  deleteAgenda,
+  restoreAgenda,
   conferenceTabs,
   emptyBoard,
   fileMimes,
@@ -78,6 +85,7 @@ import {
   ReviewDialog,
 } from "./conference-assets";
 import AgendaEntry from "./agenda-entry";
+import { MeetingText, AgendaComparison } from "./meeting-text";
 import RecordingTab from "./recording-tab";
 const labels = { ...categoryLabels, recordings: "회의 녹음 내용" };
 export default function ConferenceBoard() {
@@ -102,9 +110,16 @@ export default function ConferenceBoard() {
   const [tab, setTab] = useState<Category | "recordings">("development");
   const [writing, setWriting] = useState(false);
   const [query, setQuery] = useState("");
+  const [expandedAll, setExpandedAll] = useState(false);
+  const [changedOnly, setChangedOnly] = useState(false);
+  const [trashOpen, setTrashOpen] = useState(false);
+  const [comparisonAgenda, setComparisonAgenda] = useState<string | null>(null);
+  const [preparing, setPreparing] = useState(false);
+  const preparingRef = useRef(false);
   const [entry, setEntry] = useState<{
     initial: Agenda | null;
     category: Category;
+    editorKey?: string;
   } | null>(null);
   const [metadata, setMetadata] = useState(false);
   const [startDialog, setStartDialog] = useState(false);
@@ -133,12 +148,18 @@ export default function ConferenceBoard() {
   const visible =
     meeting?.agenda.filter(
       (a) =>
+        !a.deletedAt &&
         a.category === tab &&
+        (!changedOnly ||
+          !a.carriedFrom ||
+          agendaChangedFields(a, previousAgenda(store.data, a)).length > 0) &&
         `${a.title} ${a.product} ${a.report} ${a.plan} ${a.decision}`
           .toLowerCase()
           .includes(query.toLowerCase()),
     ) || [];
-  const legacy = meeting?.agenda.filter((a) => !isCategory(a.category)) || [];
+  const legacy =
+    meeting?.agenda.filter((a) => !a.deletedAt && !isCategory(a.category)) ||
+    [];
   const design = visible.flatMap((a) =>
     a.visuals
       .filter((v) => v.mime.startsWith("image/"))
@@ -146,7 +167,7 @@ export default function ConferenceBoard() {
   );
   const compareFiles =
     meeting?.agenda
-      .filter((a) => a.category === "design")
+      .filter((a) => !a.deletedAt && a.category === "design")
       .flatMap((a) => a.visuals)
       .filter((v) => compareIds.includes(v.id)) || [];
   function update(fn: (b: Board) => Board) {
@@ -154,6 +175,7 @@ export default function ConferenceBoard() {
     current.current = next;
     setStore(next);
     setDirty(true);
+    setNotice("");
   }
   function mutateMeeting(id: string, fn: (m: Session) => Session) {
     update((b) => ({
@@ -414,15 +436,76 @@ export default function ConferenceBoard() {
       window.removeEventListener("keydown", key);
     };
   }, [dirty, locked]);
-  async function newSession() {
+  async function newSession(blank = false) {
+    if (meeting && !blank) {
+      await prepareNext();
+      return;
+    }
     const m = newMeeting();
     update((b) => insertMeeting(b, m));
     setMeetingId(m.id);
     setTab("development");
     setMetadata(true);
   }
-  async function saveEntry(a: Agenda, files: File[]) {
+  async function prepareNext() {
+    if (!meeting || locked || preparingRef.current) return;
+    preparingRef.current = true;
+    setPreparing(true);
+    try {
+      const d = new Date(meeting.date + "T12:00:00");
+      d.setDate(d.getDate() + 7);
+      const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const originalIds = new Set(
+        current.current.data.meetings.map((m) => m.id),
+      );
+      update((b) => carryMeeting(b, getMeeting(meeting.id), date));
+      const next = current.current.data.meetings[0];
+      setMeetingId(next.id);
+      setCompareIds([]);
+      setChangedOnly(false);
+      setQuery("");
+      if (tab === "recordings") setTab("development");
+      await persist(false);
+      setNotice(
+        originalIds.has(next.id)
+          ? "이미 만들어진 다음 주 회의를 열었습니다. 작성한 내용은 유지됩니다."
+          : "전주 보고·계획·결정·첨부자료를 이어받아 저장했습니다. 바뀐 부분만 수정하세요.",
+      );
+    } catch (e) {
+      setError(message(e));
+    } finally {
+      preparingRef.current = false;
+      setPreparing(false);
+    }
+  }
+  async function removeEntry(a: Agenda) {
+    if (
+      !meeting ||
+      !window.confirm(
+        `‘${a.title}’ 안건을 이번 회의에서 삭제할까요? 첨부 원본과 이전 회의는 보존되며 삭제한 안건에서 복원할 수 있습니다.`,
+      )
+    )
+      return;
+    update((b) => deleteAgenda(b, meeting.id, a.id));
+    try {
+      await persist(false);
+      setNotice("안건을 삭제했습니다. 삭제한 안건에서 복원할 수 있습니다.");
+    } catch (e) {
+      setError(message(e));
+    }
+  }
+  async function restoreEntry(a: Agenda) {
     if (!meeting) return;
+    update((b) => restoreAgenda(b, meeting.id, a.id));
+    try {
+      await persist(false);
+      setNotice("안건과 첨부자료를 복원했습니다.");
+    } catch (e) {
+      setError(message(e));
+    }
+  }
+  async function saveEntry(a: Agenda, files: File[]) {
+    if (!meeting) throw new Error("회의를 먼저 선택해 주세요.");
     const visuals = [...a.visuals];
     for (const file of files)
       visuals.push(await uploadVisual(crypto.randomUUID(), file));
@@ -437,6 +520,7 @@ export default function ConferenceBoard() {
     }));
     if (isCategory(a.category)) setTab(a.category);
     await persist();
+    return getMeeting(meeting.id).agenda.find((item) => item.id === a.id)!;
   }
   async function recover(r: Recording) {
     if (!meeting) return;
@@ -679,10 +763,15 @@ export default function ConferenceBoard() {
                 )}
                 <button
                   className="secondary"
-                  disabled={locked}
+                  disabled={locked || preparing}
                   onClick={() => void newSession()}
                 >
-                  <Plus size={15} /> 새 주간회의
+                  <Plus size={15} />{" "}
+                  {meeting
+                    ? preparing
+                      ? "회의 준비 중…"
+                      : "다음 주 회의"
+                    : "새 주간회의"}
                 </button>
                 <button
                   className="icon-button"
@@ -711,6 +800,13 @@ export default function ConferenceBoard() {
                 >
                   <RefreshCw size={14} />
                   최신 불러오기
+                </button>
+                <button
+                  className="text-button"
+                  disabled={locked}
+                  onClick={() => void newSession(true)}
+                >
+                  <Plus size={14} />빈 회의 만들기
                 </button>
                 <button className="text-button" onClick={() => void backup()}>
                   <ArrowDownToLine size={14} />
@@ -751,17 +847,7 @@ export default function ConferenceBoard() {
                   <button
                     className="text-button"
                     disabled={locked}
-                    onClick={() => {
-                      const d = new Date(meeting.date + "T12:00:00");
-                      d.setDate(d.getDate() + 7);
-                      const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-                      update((b) => carryMeeting(b, meeting, date));
-                      setMeetingId(current.current.data.meetings[0].id);
-                      setTab("development");
-                      setNotice(
-                        "미완료 업무와 지난 보고를 다음 회의로 연결했습니다. 회의자료 저장을 눌러 주세요.",
-                      );
-                    }}
+                    onClick={() => void prepareNext()}
                   >
                     다음 주 회의 준비
                   </button>
@@ -787,7 +873,9 @@ export default function ConferenceBoard() {
                     <small>
                       {t === "recordings"
                         ? meeting.recordings.length
-                        : meeting.agenda.filter((a) => a.category === t).length}
+                        : meeting.agenda.filter(
+                            (a) => !a.deletedAt && a.category === t,
+                          ).length}
                     </small>
                   )}
                 </button>
@@ -914,6 +1002,35 @@ export default function ConferenceBoard() {
                         </button>
                       </div>
                     </div>
+                    <div className="reading-controls">
+                      <span>{visible.length}개 안건</span>
+                      <button
+                        className="text-button trash-control"
+                        aria-label="삭제한 안건"
+                        onClick={() => setTrashOpen(true)}
+                      >
+                        <Trash2 size={13} />
+                        삭제한 안건{" "}
+                        {meeting.agenda.filter((a) => a.deletedAt).length}
+                      </button>
+                      <label className="consent">
+                        <input
+                          type="checkbox"
+                          checked={changedOnly}
+                          onChange={(e) => setChangedOnly(e.target.checked)}
+                        />
+                        신규·변경 안건만
+                      </label>
+                      <button
+                        className="text-button"
+                        onClick={() => setExpandedAll((v) => !v)}
+                      >
+                        {expandedAll ? "핵심만 보기" : "전체 내용 펼치기"}
+                      </button>
+                      <span className="reading-hint">
+                        수정된 문장은 옅은 초록색으로 표시됩니다.
+                      </span>
+                    </div>
                     {tab === "design" ? (
                       <div className="design-gallery">
                         {visible.map((a) => (
@@ -926,6 +1043,13 @@ export default function ConferenceBoard() {
                                     "검토할 시안과 설명을 입력해 주세요."}
                                 </p>
                               </div>
+                              <button
+                                className="icon-button delete-entry-button"
+                                aria-label={`${a.title} 삭제`}
+                                onClick={() => void removeEntry(a)}
+                              >
+                                <Trash2 size={15} />
+                              </button>
                               <button
                                 className="text-button"
                                 aria-label={`${a.title} 수정`}
@@ -967,6 +1091,7 @@ export default function ConferenceBoard() {
                                       <span
                                         className={`review-badge ${v.status}`}
                                       >
+                                        {v.carriedFrom ? "이전 " : ""}
                                         {reviewLabels[v.status]}
                                       </span>
                                     </div>
@@ -1036,13 +1161,31 @@ export default function ConferenceBoard() {
                                     {String(i + 1).padStart(2, "0")}
                                   </span>
                                   <strong>{a.title}</strong>
+                                  {a.carriedFrom && (
+                                    <button
+                                      className={`carry-change-badge ${agendaChangedFields(a, previousAgenda(store.data, a)).length ? "modified" : ""}`}
+                                      onClick={() => setComparisonAgenda(a.id)}
+                                    >
+                                      {agendaChangedFields(
+                                        a,
+                                        previousAgenda(store.data, a),
+                                      ).length
+                                        ? `수정 ${agendaChangedFields(a, previousAgenda(store.data, a)).length}곳`
+                                        : "전주 유지"}{" "}
+                                      · 비교
+                                    </button>
+                                  )}
                                   {a.product && a.product !== a.title && (
                                     <small>{a.product}</small>
                                   )}
-                                  {a.previous && (
+                                  {(previousAgenda(store.data, a) ||
+                                    a.previous) && (
                                     <details className="row-previous">
                                       <summary>지난 보고 보기</summary>
-                                      <p>{a.previous}</p>
+                                      <p>
+                                        {previousAgenda(store.data, a)
+                                          ?.report || a.previous}
+                                      </p>
                                     </details>
                                   )}
                                 </td>
@@ -1060,9 +1203,13 @@ export default function ConferenceBoard() {
                                       }
                                     />
                                   ) : (
-                                    <p>
-                                      {a.report || "진행 내용을 입력해 주세요."}
-                                    </p>
+                                    <MeetingText
+                                      value={a.report}
+                                      previous={
+                                        previousAgenda(store.data, a)?.report
+                                      }
+                                      expanded={expandedAll}
+                                    />
                                   )}
                                   {!!a.visuals.length && (
                                     <div className="table-attachments">
@@ -1111,7 +1258,13 @@ export default function ConferenceBoard() {
                                       }
                                     />
                                   ) : (
-                                    <p>{a.plan || "—"}</p>
+                                    <MeetingText
+                                      value={a.plan}
+                                      previous={
+                                        previousAgenda(store.data, a)?.plan
+                                      }
+                                      expanded={expandedAll}
+                                    />
                                   )}
                                 </td>
                                 <td>
@@ -1128,7 +1281,13 @@ export default function ConferenceBoard() {
                                       }
                                     />
                                   ) : (
-                                    <p>{a.decision || "—"}</p>
+                                    <MeetingText
+                                      value={a.decision}
+                                      previous={
+                                        previousAgenda(store.data, a)?.decision
+                                      }
+                                      expanded={expandedAll}
+                                    />
                                   )}
                                 </td>
                                 <td className="no-print">
@@ -1140,6 +1299,13 @@ export default function ConferenceBoard() {
                                     }
                                   >
                                     <Edit3 size={16} />
+                                  </button>
+                                  <button
+                                    className="icon-button delete-entry-button"
+                                    aria-label={`${a.title} 삭제`}
+                                    onClick={() => void removeEntry(a)}
+                                  >
+                                    <Trash2 size={15} />
                                   </button>
                                 </td>
                               </tr>
@@ -1190,12 +1356,133 @@ export default function ConferenceBoard() {
       </main>
       {entry && (
         <AgendaEntry
+          key={entry.editorKey ?? entry.initial?.id ?? "new"}
           initial={entry.initial}
           category={entry.category}
+          previous={
+            entry.initial
+              ? previousAgenda(store.data, entry.initial)
+              : undefined
+          }
           onClose={() => setEntry(null)}
           onSave={saveEntry}
+          onSaved={(saved) =>
+            setEntry((current) =>
+              current
+                ? {
+                    ...current,
+                    initial: saved,
+                    editorKey:
+                      current.editorKey ?? current.initial?.id ?? "new",
+                  }
+                : null,
+            )
+          }
+          position={
+            entry.initial && visible.some((a) => a.id === entry.initial!.id)
+              ? {
+                  index: visible.findIndex((a) => a.id === entry.initial!.id),
+                  total: visible.length,
+                }
+              : undefined
+          }
+          onStep={
+            entry.initial && visible.some((a) => a.id === entry.initial!.id)
+              ? (by) => {
+                  const i =
+                    visible.findIndex((a) => a.id === entry.initial!.id) + by;
+                  const a = visible[i];
+                  if (a && isCategory(a.category))
+                    setEntry({ initial: a, category: a.category });
+                }
+              : undefined
+          }
         />
       )}
+      {trashOpen && meeting && (
+        <div className="modal-backdrop">
+          <section
+            className="modal trash-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label="삭제한 안건"
+          >
+            <div className="section-heading">
+              <div>
+                <h2>삭제한 안건</h2>
+                <p>
+                  이 회의에서 삭제한 내용만 표시합니다. 이전 회의와 원본 파일은
+                  보관됩니다.
+                </p>
+              </div>
+              <button
+                className="icon-button"
+                aria-label="삭제한 안건 닫기"
+                onClick={() => setTrashOpen(false)}
+              >
+                <X />
+              </button>
+            </div>
+            <div className="trash-list">
+              {meeting.agenda
+                .filter((a) => a.deletedAt)
+                .map((a) => (
+                  <article key={a.id}>
+                    <div>
+                      <strong>{a.title}</strong>
+                      <small>
+                        {isCategory(a.category)
+                          ? categoryLabels[a.category]
+                          : a.category}{" "}
+                        · 첨부 {a.visuals.length}개
+                      </small>
+                      <p>{a.report.slice(0, 200)}</p>
+                    </div>
+                    <button
+                      className="secondary"
+                      aria-label={`${a.title} 복원`}
+                      onClick={() => void restoreEntry(a)}
+                    >
+                      <RotateCcw size={14} />
+                      복원
+                    </button>
+                  </article>
+                ))}
+              {!meeting.agenda.some((a) => a.deletedAt) && (
+                <div className="empty">삭제한 안건이 없습니다.</div>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+      {comparisonAgenda &&
+        meeting &&
+        (() => {
+          const a = meeting.agenda.find((a) => a.id === comparisonAgenda);
+          const previous = a ? previousAgenda(store.data, a) : undefined;
+          return a && previous ? (
+            <div className="modal-backdrop">
+              <section
+                className="modal agenda-change-dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-label="전주 변경 비교"
+              >
+                <div className="section-heading">
+                  <h2>{a.title} · 전주와 비교</h2>
+                  <button
+                    className="icon-button"
+                    aria-label="변경 비교 닫기"
+                    onClick={() => setComparisonAgenda(null)}
+                  >
+                    <X />
+                  </button>
+                </div>
+                <AgendaComparison agenda={a} previous={previous} />
+              </section>
+            </div>
+          ) : null;
+        })()}
       {metadata && meeting && (
         <div className="modal-backdrop">
           <section
