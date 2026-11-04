@@ -108,7 +108,6 @@ export default function ConferenceBoard() {
   const [notice, setNotice] = useState("");
   const [meetingId, setMeetingId] = useState("");
   const [tab, setTab] = useState<Category | "recordings">("development");
-  const [writing, setWriting] = useState(false);
   const [query, setQuery] = useState("");
   const [expandedAll, setExpandedAll] = useState(false);
   const [changedOnly, setChangedOnly] = useState(false);
@@ -670,20 +669,6 @@ export default function ConferenceBoard() {
         <a href="/" className="meeting-brand">
           AZLA <span>주간회의 워크스페이스</span>
         </a>
-        <div className="mode-switch">
-          <button
-            className={writing ? "active" : ""}
-            onClick={() => setWriting(true)}
-          >
-            내용 작성
-          </button>
-          <button
-            className={!writing ? "active" : ""}
-            onClick={() => setWriting(false)}
-          >
-            취합 회의자료
-          </button>
-        </div>
         <div className="header-actions">
           {recorder.phase === "recording" ? (
             <>
@@ -1203,27 +1188,13 @@ export default function ConferenceBoard() {
                                   )}
                                 </td>
                                 <td>
-                                  {writing ? (
-                                    <textarea
-                                      aria-label={`${a.title} 진행 내용`}
-                                      rows={5}
-                                      maxLength={60000}
-                                      value={a.report}
-                                      onChange={(e) =>
-                                        patchAgenda(a.id, {
-                                          report: e.target.value,
-                                        })
-                                      }
-                                    />
-                                  ) : (
-                                    <MeetingText
-                                      value={a.report}
-                                      previous={
-                                        previousAgenda(store.data, a)?.report
-                                      }
-                                      expanded={expandedAll}
-                                    />
-                                  )}
+                                  <MeetingText
+                                    value={a.report}
+                                    previous={
+                                      previousAgenda(store.data, a)?.report
+                                    }
+                                    expanded={expandedAll}
+                                  />
                                   {a.plan && <LegacyPlan value={a.plan} />}
                                   {!!a.visuals.length && (
                                     <div className="table-attachments">
@@ -1259,27 +1230,13 @@ export default function ConferenceBoard() {
                                   )}
                                 </td>
                                 <td>
-                                  {writing ? (
-                                    <textarea
-                                      aria-label={`${a.title} 회의 결정`}
-                                      rows={5}
-                                      maxLength={30000}
-                                      value={a.decision}
-                                      onChange={(e) =>
-                                        patchAgenda(a.id, {
-                                          decision: e.target.value,
-                                        })
-                                      }
-                                    />
-                                  ) : (
-                                    <MeetingText
-                                      value={a.decision}
-                                      previous={
-                                        previousAgenda(store.data, a)?.decision
-                                      }
-                                      expanded={expandedAll}
-                                    />
-                                  )}
+                                  <MeetingText
+                                    value={a.decision}
+                                    previous={
+                                      previousAgenda(store.data, a)?.decision
+                                    }
+                                    expanded={expandedAll}
+                                  />
                                 </td>
                                 <td className="no-print">
                                   <button

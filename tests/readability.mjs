@@ -20,6 +20,16 @@ try {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(base);
+  assert.equal(
+    await page.getByRole("button", { name: "내용 작성", exact: true }).count(),
+    0,
+  );
+  assert.equal(
+    await page
+      .getByRole("button", { name: "취합 회의자료", exact: true })
+      .count(),
+    0,
+  );
   await page.getByRole("button", { name: "새 주간회의", exact: true }).click();
   const meta = page.getByRole("dialog", { name: "회의 정보" });
   await meta.getByLabel("회의 제목").fill("주간회의 가독성 검증");

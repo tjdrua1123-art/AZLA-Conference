@@ -3277,27 +3277,6 @@ label > select {
   font-weight: 600;
   color: #50634a;
 }
-.mode-switch {
-  display: flex;
-  align-items: center;
-  border: 1px solid #dde5d7;
-  border-radius: 6px;
-  background: #fafcf8;
-  padding: 3px;
-  white-space: nowrap;
-}
-.mode-switch > button {
-  border: 0;
-  background: transparent;
-  color: #8a9b7e;
-  font-size: 11px;
-  padding: 8px 18px;
-  border-radius: 4px;
-}
-.mode-switch > button.active {
-  background: #315e3d;
-  color: #fff;
-}
 .header-actions {
   display: flex;
   gap: 10px;
@@ -3917,11 +3896,9 @@ label > select {
   .meeting-brand span {
     font-size: 12px;
   }
-  .mode-switch {
-    margin-left: auto;
-  }
   .header-actions {
-    width: 100%;
+    width: auto;
+    margin-left: auto;
     justify-content: flex-end;
   }
   .meeting-tabs > button {
@@ -4063,15 +4040,6 @@ label > select {
   .meeting-brand span {
     font-size: 10px;
     padding-left: 10px;
-  }
-  .mode-switch {
-    margin: 0;
-    width: 100%;
-  }
-  .mode-switch > button {
-    flex: 1;
-    font-size: 11px;
-    padding: 8px 10px;
   }
   .header-actions {
     gap: 8px;
@@ -5487,7 +5455,6 @@ label > select {
 .meeting-app .comparison-field-tabs button,
 .meeting-app .text-button,
 .meeting-app .icon-button,
-.meeting-app .mode-switch > button:not(.active),
 .meeting-app .meeting-tabs > button:not(.active),
 .meeting-app .secondary {
   color: #334b3b;

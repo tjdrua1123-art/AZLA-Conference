@@ -342,40 +342,53 @@ try {
     "PASS: provider failure preserves audio, retry recovers summary; ZIP restoration includes original audio and saved summaries.",
   );
   await page.getByRole("tab", { name: "신제품개발", exact: true }).click();
-  await page.getByRole("button", { name: "내용 작성", exact: true }).click();
+  assert.equal(
+    await page.getByRole("button", { name: "내용 작성", exact: true }).count(),
+    0,
+  );
+  assert.equal(
+    await page
+      .getByRole("button", { name: "취합 회의자료", exact: true })
+      .count(),
+    0,
+  );
   const second = await context.newPage();
   await second.goto(base);
-  await second.getByRole("button", { name: "내용 작성", exact: true }).click();
   await page
-    .getByLabel("개발 전용 진행 내용", { exact: true })
+    .getByRole("button", { name: "개발 전용 수정", exact: true })
+    .click();
+  await second
+    .getByRole("button", { name: "개발 전용 수정", exact: true })
+    .click();
+  const firstEditor = page.getByRole("dialog", {
+    name: "안건 수정",
+    exact: true,
+  });
+  const secondEditor = second.getByRole("dialog", {
+    name: "안건 수정",
+    exact: true,
+  });
+  await firstEditor
+    .getByLabel("진행 내용", { exact: true })
     .fill("동시 수정 진행");
-  await page
-    .getByRole("button", { name: "회의자료 저장", exact: true })
+  await firstEditor
+    .getByRole("button", { name: "저장 후 닫기", exact: true })
     .click();
-  await page
-    .getByRole("status")
-    .filter({ hasText: "회의 내용을 저장했습니다." })
-    .waitFor();
-  await second
-    .getByLabel("개발 전용 회의 결정", { exact: true })
+  await firstEditor.waitFor({ state: "hidden" });
+  await secondEditor
+    .getByLabel("회의 결정", { exact: true })
     .fill("다른 탭 회의 결정");
-  await second
-    .getByRole("button", { name: "회의자료 저장", exact: true })
+  await secondEditor
+    .getByRole("button", { name: "저장 후 닫기", exact: true })
     .click();
-  await second
-    .getByRole("status")
-    .filter({ hasText: "회의 내용을 저장했습니다." })
-    .waitFor();
+  await secondEditor.waitFor({ state: "hidden" });
+  await second.getByText("동시 수정 진행", { exact: true }).waitFor();
+  await second.getByText("다른 탭 회의 결정", { exact: true }).waitFor();
   assert.equal(
-    await second
-      .getByLabel("개발 전용 진행 내용", { exact: true })
-      .inputValue(),
-    "동시 수정 진행",
+    await second.locator(".meeting-report-table textarea").count(),
+    0,
   );
   await second.close();
-  await page
-    .getByRole("button", { name: "취합 회의자료", exact: true })
-    .click();
   await page.screenshot({ path: "/tmp/azla-v03-meeting.png", fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(
