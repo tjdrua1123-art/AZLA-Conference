@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { authorized } from "@/lib/supabase-server";
+import {
+  apiFailure,
+  sameOrigin,
+  serviceDB,
+  workspaceAccess,
+} from "@/lib/conference-server";
+import { boardSchema } from "@/lib/conference";
 import { outputSchema, validateEvidence } from "@/lib/ai";
 import { z } from "zod";
 export const runtime = "nodejs";
@@ -8,27 +13,47 @@ export const maxDuration = 120;
 const input = z.object({
   kind: z.enum(["summary", "transcribe"]),
   meeting_id: z.uuid(),
-  notes: z.string().max(30000).optional(),
+  notes: z.string().max(90000).optional(),
   transcript: z.string().max(60000).optional(),
   attachment_id: z.uuid().optional(),
   consent: z.boolean(),
 });
 export async function POST(req: NextRequest) {
   let reservation: string | undefined;
-  const service = () =>
-    createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } },
-    );
+  const service = serviceDB;
   try {
-    const { db } = await authorized(true);
+    if (!sameOrigin(req))
+      return NextResponse.json(
+        { error: "허용되지 않은 요청입니다." },
+        { status: 403 },
+      );
+    const db = await workspaceAccess();
     if (!process.env.OPENAI_API_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY)
       return NextResponse.json(
         { error: "서버의 OpenAI 및 Supabase 관리자 키 설정이 필요합니다." },
         { status: 503 },
       );
-    const body = input.parse(await req.json());
+    const raw = await req.text();
+    if (raw.length > 200000)
+      return NextResponse.json(
+        { error: "입력이 너무 깁니다. 안건을 나누어 정리해 주세요." },
+        { status: 413 },
+      );
+    const body = input.parse(JSON.parse(raw));
+    const workspace = await db
+      .from("conference_workspace")
+      .select("data")
+      .eq("id", "azla")
+      .single();
+    if (workspace.error) throw workspace.error;
+    const meeting = boardSchema
+      .parse(workspace.data.data)
+      .meetings.find((m) => m.id === body.meeting_id);
+    if (!meeting)
+      return NextResponse.json(
+        { error: "AI를 사용하기 전에 회의를 저장해 주세요." },
+        { status: 400 },
+      );
     if (!body.consent)
       return NextResponse.json(
         { error: "외부 AI 처리 동의가 필요합니다." },
@@ -45,15 +70,12 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     if (body.kind === "transcribe") {
-      const { data: a, error } = await db
-        .from("attachments")
-        .select("*")
-        .eq("id", body.attachment_id ?? "00000000-0000-0000-0000-000000000000")
-        .eq("meeting_id", body.meeting_id)
-        .single();
+      const a = meeting.agenda
+        .flatMap((item) => item.visuals)
+        .find((file) => file.id === body.attachment_id);
       if (
-        error ||
         !a ||
+        !/^azla\/[a-f0-9-]{36}\.[a-z0-9]+$/.test(a.path) ||
         ![
           "audio/webm",
           "video/webm",
@@ -62,13 +84,15 @@ export async function POST(req: NextRequest) {
           "audio/wav",
           "audio/x-wav",
           "audio/ogg",
-        ].includes(a.mime_type)
+        ].includes(a.mime)
       )
         return NextResponse.json(
           { error: "이 회의에 첨부된 녹음파일을 선택해 주세요." },
           { status: 400 },
         );
-      const download = await db.storage.from("meeting-files").download(a.path);
+      const download = await db.storage
+        .from("conference-files")
+        .download(a.path);
       if (download.error) throw download.error;
       file = download.data;
       if (file.size > 20 * 1024 * 1024)
@@ -77,13 +101,12 @@ export async function POST(req: NextRequest) {
           { status: 400 },
         );
     }
-    const reserved = await db.rpc("reserve_ai", {
-      p_meeting: body.meeting_id,
+    const reserved = await db.rpc("reserve_conference_ai", {
       p_kind: body.kind,
     });
     if (reserved.error)
       return NextResponse.json(
-        { error: "AI 일일 사용 한도 또는 회의 접근 권한을 확인해 주세요." },
+        { error: "팀 AI 일일 한도(40회) 또는 저장소 설정을 확인해 주세요." },
         { status: 429 },
       );
     reservation = reserved.data;
@@ -153,43 +176,42 @@ export async function POST(req: NextRequest) {
               source,
             ),
           };
-    const done = await service().rpc("finish_ai", {
-      p_id: reservation,
-      p_status: "success",
-      p_input: result.usage?.prompt_tokens ?? null,
-      p_output: result.usage?.completion_tokens ?? null,
-    });
+    const done = await service()
+      .from("conference_ai_usage")
+      .update({
+        status: "success",
+        input_tokens: result.usage?.prompt_tokens ?? null,
+        output_tokens: result.usage?.completion_tokens ?? null,
+      })
+      .eq("id", reservation);
     if (done.error) console.error("AI usage outcome could not be recorded");
     return NextResponse.json(answer);
   } catch (e) {
     if (reservation) {
       try {
-        await service().rpc("finish_ai", {
-          p_id: reservation,
-          p_status: "failed",
-        });
+        await service()
+          .from("conference_ai_usage")
+          .update({ status: "failed" })
+          .eq("id", reservation);
       } catch {
         console.error("AI failure outcome could not be recorded");
       }
     }
     const message = e instanceof Error ? e.message : "";
+    if (
+      [
+        "SHARED_ACCESS_REQUIRED",
+        "SHARED_NOT_CONFIGURED",
+        "ACCESS_NOT_CONFIGURED",
+      ].includes(message)
+    )
+      return apiFailure(e);
     return NextResponse.json(
       {
         error:
-          message === "UNAUTHORIZED"
-            ? "로그인이 필요합니다."
-            : message === "FORBIDDEN"
-              ? "작성 권한이 없습니다."
-              : "AI 처리에 실패했습니다. 입력 길이, 사용 한도 및 서비스 설정을 확인해 주세요. 원본 자료는 유지됩니다.",
+          "AI 처리에 실패했습니다. 입력 길이, 사용 한도와 연결 상태를 확인해 주세요. 원본은 유지됩니다.",
       },
-      {
-        status:
-          message === "UNAUTHORIZED"
-            ? 401
-            : message === "FORBIDDEN"
-              ? 403
-              : 502,
-      },
+      { status: 502 },
     );
   }
 }
