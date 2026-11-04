@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { nextMonday } from "./types";
+import { aiSchema } from "./ai";
 export const reviewLabels = {
   pending: "검토 대기",
   approved: "승인",
@@ -7,15 +8,24 @@ export const reviewLabels = {
 } as const;
 export type ReviewStatus = keyof typeof reviewLabels;
 export const categoryLabels = {
-  development: "신제품 개발",
-  production: "양산 / 납품",
-  partner: "협력업체",
-  pending: "보류 프로젝트",
-  other: "기타",
+  development: "신제품개발",
+  design: "디자인",
+  production: "생산관련업데이트",
+  pending: "보류",
+  stopped: "중단",
 } as const;
+export type Category = keyof typeof categoryLabels;
+export const conferenceTabs = [
+  ...Object.keys(categoryLabels),
+  "recordings",
+] as (Category | "recordings")[];
+export function isCategory(value: string): value is Category {
+  return value in categoryLabels;
+}
 const uid = z.uuid();
 const short = z.string().max(500);
 export const visualSchema = z.object({
+  sequence: z.number().int().nonnegative().optional(),
   id: uid,
   name: short,
   path: z
@@ -56,6 +66,8 @@ export const agendaSchema = z.object({
   category: z.enum([
     "development",
     "production",
+    "design",
+    "stopped",
     "partner",
     "pending",
     "other",
@@ -80,6 +92,33 @@ export const workTaskSchema = z.object({
   meetingIds: z.array(uid).max(1000),
 });
 export type WorkTask = z.infer<typeof workTaskSchema>;
+export const recordingDraftSchema = aiSchema.extend({
+  summary: aiSchema.shape.summary.max(200),
+  discussion: aiSchema.shape.discussion.max(300),
+  decisions: aiSchema.shape.decisions.max(300),
+  tasks: aiSchema.shape.tasks.max(300),
+});
+export const recordingSchema = z.object({
+  id: uid,
+  startedAt: z.string(),
+  endedAt: z.string().nullable(),
+  durationSeconds: z.number().nonnegative(),
+  status: z.enum(["recording", "processing", "ready", "needs_setup", "failed"]),
+  consent: z.boolean(),
+  parts: z.array(visualSchema).max(300),
+  transcribedPartIds: z.array(uid).max(300),
+  transcript: z.string().max(600000),
+  draft: recordingDraftSchema.nullable(),
+  error: z.string().max(2000),
+  reviewed: z.boolean(),
+});
+export type Recording = z.infer<typeof recordingSchema>;
+export function meetingFiles(meeting: Session): Visual[] {
+  return [
+    ...meeting.agenda.flatMap((a) => a.visuals),
+    ...meeting.recordings.flatMap((r) => r.parts),
+  ];
+}
 export const sessionSchema = z.object({
   id: uid,
   title: z.string().min(1).max(200),
@@ -91,6 +130,7 @@ export const sessionSchema = z.object({
   transcript: z.string().max(60000),
   reviewed: z.boolean(),
   agenda: z.array(agendaSchema).max(300),
+  recordings: z.array(recordingSchema).max(200).default([]),
 });
 export type Session = z.infer<typeof sessionSchema>;
 export const boardSchema = z
@@ -111,6 +151,7 @@ export const boardSchema = z
       for (const id of [
         m.id,
         ...m.agenda.flatMap((a) => [a.id, ...a.visuals.map((v) => v.id)]),
+        ...m.recordings.flatMap((r) => [r.id, ...r.parts.map((p) => p.id)]),
       ]) {
         if (ids.has(id)) ctx.addIssue({ code: "custom", message: "중복 ID" });
         ids.add(id);
@@ -158,6 +199,7 @@ export function newMeeting(date = nextMonday()): Session {
     transcript: "",
     reviewed: false,
     agenda: [],
+    recordings: [],
   };
 }
 export function insertMeeting(board: Board, meeting: Session): Board {

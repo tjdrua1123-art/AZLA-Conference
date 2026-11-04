@@ -5,7 +5,7 @@ import {
   serviceDB,
   workspaceAccess,
 } from "@/lib/conference-server";
-import { boardSchema } from "@/lib/conference";
+import { boardSchema, meetingFiles } from "@/lib/conference";
 import { outputSchema, validateEvidence } from "@/lib/ai";
 import { z } from "zod";
 export const runtime = "nodejs";
@@ -70,9 +70,9 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     if (body.kind === "transcribe") {
-      const a = meeting.agenda
-        .flatMap((item) => item.visuals)
-        .find((file) => file.id === body.attachment_id);
+      const a = meetingFiles(meeting).find(
+        (file) => file.id === body.attachment_id,
+      );
       if (
         !a ||
         !/^azla\/[a-f0-9-]{36}\.[a-z0-9]+$/.test(a.path) ||

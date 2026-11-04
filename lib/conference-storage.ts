@@ -72,12 +72,44 @@ export async function mode(): Promise<{
   return api("/api/conference/access");
 }
 export async function loadBoard(mode: StorageMode): Promise<StoredBoard> {
-  return mode === "shared"
-    ? api("/api/conference")
-    : ((await read<StoredBoard>("state", "board")) ?? {
-        version: 0,
-        data: emptyBoard(),
-      });
+  const stored =
+    mode === "shared"
+      ? await api<StoredBoard>("/api/conference")
+      : ((await read<StoredBoard>("state", "board")) ?? {
+          version: 0,
+          data: emptyBoard(),
+        });
+  return { ...stored, data: boardSchema.parse(stored.data) };
+}
+// Persist completed segments before upload so interrupted uploads can be retried.
+export async function cacheRecording(key: string, file: Blob) {
+  const db = await database();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction("files", "readwrite");
+      tx.objectStore("files").put(file, "recovery:" + key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } finally {
+    db.close();
+  }
+}
+export async function recordingRecovery(key: string) {
+  return read<Blob>("files", "recovery:" + key);
+}
+export async function clearRecordingRecovery(key: string) {
+  const db = await database();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction("files", "readwrite");
+      tx.objectStore("files").delete("recovery:" + key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } finally {
+    db.close();
+  }
 }
 export async function saveBoard(
   mode: StorageMode,
@@ -229,4 +261,32 @@ export async function saveWithMerge(
   throw new Error(
     "동시에 저장하는 요청이 많습니다. 현재 내용은 유지됩니다. 다시 저장해 주세요.",
   );
+}
+export async function findRecordingRecovery(
+  recordingId: string,
+): Promise<{ key: string; file: Blob }[]> {
+  const db = await database();
+  try {
+    return await new Promise((resolve, reject) => {
+      const prefix = "recovery:" + recordingId + "/";
+      const result: { key: string; file: Blob }[] = [];
+      const req = db
+        .transaction("files")
+        .objectStore("files")
+        .openCursor(IDBKeyRange.bound(prefix, prefix + "\uffff"));
+      req.onsuccess = () => {
+        const c = req.result;
+        if (c) {
+          result.push({
+            key: String(c.key).slice("recovery:".length),
+            file: c.value,
+          });
+          c.continue();
+        } else resolve(result);
+      };
+      req.onerror = () => reject(req.error);
+    });
+  } finally {
+    db.close();
+  }
 }

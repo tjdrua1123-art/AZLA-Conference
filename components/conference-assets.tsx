@@ -1,16 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
+import { Check, Download, X } from "lucide-react";
 import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Download,
-  Maximize2,
-  MessageSquare,
-  X,
-} from "lucide-react";
-import {
-  type Agenda,
   type ReviewStatus,
   type Visual,
   reviewLabels,
@@ -245,123 +236,6 @@ export function CompareDialog({
           </section>
         ))}
       </div>
-    </div>
-  );
-}
-export function Presentation({
-  mode,
-  agenda,
-  onClose,
-  onReview,
-}: {
-  mode: StorageMode;
-  agenda: Agenda[];
-  onClose: () => void;
-  onReview: (agenda: Agenda, file: Visual) => void;
-}) {
-  const frames = agenda.flatMap((a) => [
-    { agenda: a, file: null as Visual | null },
-    ...a.visuals
-      .filter((v) => v.mime.startsWith("image/"))
-      .map((v) => ({ agenda: a, file: v })),
-  ]);
-  const [index, setIndex] = useState(0);
-  const current = frames[Math.min(index, frames.length - 1)];
-  const move = (by: number) =>
-    setIndex((i) => Math.max(0, Math.min(frames.length - 1, i + by)));
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      if (e.key === "ArrowRight") move(1);
-      if (e.key === "ArrowLeft") move(-1);
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [frames.length, onClose]);
-  if (!current) return null;
-  return (
-    <div
-      className="presentation"
-      role="dialog"
-      aria-modal="true"
-      aria-label="회의 진행 모드"
-    >
-      <header>
-        <div>
-          <span className="eyebrow">AZLA · MEETING ROOM</span>
-          <h2>{current.agenda.product || current.agenda.title}</h2>
-        </div>
-        <div>
-          <span>
-            {index + 1} / {frames.length}
-          </span>
-          <button className="secondary" onClick={onClose}>
-            <X size={17} /> 회의 모드 종료
-          </button>
-        </div>
-      </header>
-      <main>
-        {current.file ? (
-          <>
-            <h3 className="presentation-label">
-              {current.file.label}
-              <span className={`review-badge ${current.file.status}`}>
-                {reviewLabels[current.file.status]}
-              </span>
-            </h3>
-            <AssetImage mode={mode} file={current.file} />
-            <div className="presentation-feedback">
-              <p>
-                {current.file.comment ||
-                  "검토 의견을 함께 확인하고 기록하세요."}
-              </p>
-              <button
-                className="primary"
-                onClick={() => onReview(current.agenda, current.file!)}
-              >
-                <MessageSquare size={17} /> 컨펌 의견 기록
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <h1>{current.agenda.title}</h1>
-            <div className="presentation-columns">
-              <section>
-                <h3>이번 주 업무 보고</h3>
-                <p>
-                  {current.agenda.report || "이번 주 진행 상황을 입력하세요."}
-                </p>
-              </section>
-              <section>
-                <h3>다음 계획</h3>
-                <p>{current.agenda.plan || "후속 계획을 입력하세요."}</p>
-                <h3>결정 · 확인할 사항</h3>
-                <p>
-                  {current.agenda.decision || "회의 중 결정을 기록해 주세요."}
-                </p>
-              </section>
-            </div>
-          </>
-        )}
-      </main>
-      <footer>
-        <button
-          className="secondary"
-          disabled={index === 0}
-          onClick={() => move(-1)}
-        >
-          <ArrowLeft size={18} /> 이전
-        </button>
-        <span>← → 키로 이동 · Esc로 종료</span>
-        <button
-          className="secondary"
-          disabled={index === frames.length - 1}
-          onClick={() => move(1)}
-        >
-          다음 <ArrowRight size={18} />
-        </button>
-      </footer>
     </div>
   );
 }

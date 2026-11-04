@@ -1,6 +1,7 @@
 import JSZip from "jszip";
 import {
   boardSchema,
+  meetingFiles,
   newAgenda,
   type Agenda,
   type Board,
@@ -215,15 +216,11 @@ export async function exportBackup(mode: StorageMode, data: Board) {
   zip.file("conference.json", JSON.stringify(data, null, 2));
   const seen = new Set<string>();
   for (const m of data.meetings)
-    for (const a of m.agenda)
-      for (const v of a.visuals) {
-        if (seen.has(v.id)) continue;
-        seen.add(v.id);
-        zip.file(
-          `files/${v.id}`,
-          await (await fileBlob(mode, v)).arrayBuffer(),
-        );
-      }
+    for (const v of meetingFiles(m)) {
+      if (seen.has(v.id)) continue;
+      seen.add(v.id);
+      zip.file(`files/${v.id}`, await (await fileBlob(mode, v)).arrayBuffer());
+    }
   return zip.generateAsync({ type: "blob" });
 }
 export async function restoreBackup(
@@ -236,23 +233,21 @@ export async function restoreBackup(
   const board = boardSchema.parse(JSON.parse(await manifest.async("string")));
   const paths = new Map<string, string>();
   for (const m of board.meetings)
-    for (const a of m.agenda)
-      for (const v of a.visuals) {
-        let path = paths.get(v.id);
-        if (!path) {
-          const e = zip.file(`files/${v.id}`);
-          if (!e)
-            throw new Error(`백업에서 ${v.name} 파일을 찾을 수 없습니다.`);
-          const blob = new Blob([await e.async("arraybuffer")], {
-            type: v.mime,
-          });
-          if (blob.size !== v.size)
-            throw new Error("백업 파일 크기가 원본 정보와 다릅니다.");
-          path = await saveFile(mode, v.id, blob, v.name);
-          paths.set(v.id, path);
-        }
-        v.path = path;
+    for (const v of meetingFiles(m)) {
+      let path = paths.get(v.id);
+      if (!path) {
+        const e = zip.file(`files/${v.id}`);
+        if (!e) throw new Error(`백업에서 ${v.name} 파일을 찾을 수 없습니다.`);
+        const blob = new Blob([await e.async("arraybuffer")], {
+          type: v.mime,
+        });
+        if (blob.size !== v.size)
+          throw new Error("백업 파일 크기가 원본 정보와 다릅니다.");
+        path = await saveFile(mode, v.id, blob, v.name);
+        paths.set(v.id, path);
       }
+      v.path = path;
+    }
   return board;
 }
 
