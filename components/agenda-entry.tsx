@@ -16,6 +16,7 @@ import {
   type Agenda,
   type Category,
 } from "@/lib/conference";
+import { LegacyPlan } from "./meeting-text";
 export default function AgendaEntry({
   initial,
   category,
@@ -43,13 +44,11 @@ export default function AgendaEntry({
   const [error, setError] = useState("");
   const [changed, setChanged] = useState(false);
   const [feedback, setFeedback] = useState("");
-  const [focus, setFocus] = useState<"report" | "plan" | "decision" | null>(
-    null,
-  );
+  const [focus, setFocus] = useState<"report" | "decision" | null>(null);
   const [compare, setCompare] = useState(false);
-  const [compareField, setCompareField] = useState<
-    "report" | "plan" | "decision"
-  >("report");
+  const [compareField, setCompareField] = useState<"report" | "decision">(
+    "report",
+  );
   const form = useRef<HTMLFormElement>(null);
   useEffect(() => {
     if (window.matchMedia("(max-width:800px)").matches) setFocus("report");
@@ -184,7 +183,7 @@ export default function AgendaEntry({
                 }}
               >
                 <Columns2 size={15} />
-                {compare ? "입력 화면" : "전주와 비교"}
+                {compare ? "입력 화면" : "이전 회의와 비교"}
               </button>
             )}
             <button
@@ -247,7 +246,7 @@ export default function AgendaEntry({
             </div>
             {!compare && (
               <div className="mobile-entry-fields">
-                {(["report", "plan", "decision"] as const).map((k) => (
+                {(["report", "decision"] as const).map((k) => (
                   <button
                     type="button"
                     key={k}
@@ -257,7 +256,6 @@ export default function AgendaEntry({
                     {
                       {
                         report: "진행 내용",
-                        plan: "다음 계획",
                         decision: "회의 결정",
                       }[k]
                     }
@@ -268,7 +266,7 @@ export default function AgendaEntry({
             {compare && previous ? (
               <div className="entry-compare-mode">
                 <div className="comparison-field-tabs">
-                  {(["report", "plan", "decision"] as const).map((k) => (
+                  {(["report", "decision"] as const).map((k) => (
                     <button
                       type="button"
                       key={k}
@@ -278,7 +276,6 @@ export default function AgendaEntry({
                       {
                         {
                           report: "진행 내용",
-                          plan: "다음 계획",
                           decision: "회의 결정",
                         }[k]
                       }
@@ -287,17 +284,17 @@ export default function AgendaEntry({
                 </div>
                 <div className="entry-comparison-panes">
                   <label>
-                    전주 내용 · 읽기 전용
+                    이전 회의 내용 · 읽기 전용
                     <textarea
-                      aria-label="전주 내용"
+                      aria-label="이전 회의 내용"
                       readOnly
                       value={previous[compareField]}
                     />
                   </label>
                   <label>
-                    이번 주 · 수정 가능
+                    이번 회의 · 수정 가능
                     <textarea
-                      aria-label="이번 주 비교 수정"
+                      aria-label="이번 회의 비교 수정"
                       maxLength={compareField === "report" ? 60000 : 30000}
                       value={value[compareField]}
                       onChange={(e) => set(compareField, e.target.value)}
@@ -307,7 +304,7 @@ export default function AgendaEntry({
               </div>
             ) : (
               <div className={`entry-writing-panels ${focus ? "focused" : ""}`}>
-                {(["report", "plan", "decision"] as const)
+                {(["report", "decision"] as const)
                   .filter((k) => !focus || focus === k)
                   .map((key, i) => (
                     <section className="entry-writing-panel" key={key}>
@@ -317,7 +314,6 @@ export default function AgendaEntry({
                           {
                             {
                               report: "진행 내용",
-                              plan: "다음 계획",
                               decision: "회의 결정",
                             }[key]
                           }
@@ -329,14 +325,13 @@ export default function AgendaEntry({
                             setFocus((f) => (f === key ? null : key))
                           }
                         >
-                          {focus ? "세 칸 모두 보기" : "넓게 쓰기"}
+                          {focus ? "두 칸 모두 보기" : "넓게 쓰기"}
                         </button>
                       </div>
                       <textarea
                         aria-label={
                           {
                             report: "진행 내용",
-                            plan: "다음 계획",
                             decision: "회의 결정",
                           }[key]
                         }
@@ -345,7 +340,6 @@ export default function AgendaEntry({
                           {
                             report:
                               "기존 진행 내용에서 바뀐 부분만 수정하세요.",
-                            plan: "다음에 할 일과 확인할 사항을 작성하세요.",
                             decision: "회의에서 결정된 내용을 기록하세요.",
                           }[key]
                         }
@@ -356,6 +350,7 @@ export default function AgendaEntry({
                   ))}
               </div>
             )}
+            {value.plan && <LegacyPlan value={value.plan} />}
             <div className="entry-attachment-bar">
               <label className="secondary file-button">
                 <Upload size={15} />

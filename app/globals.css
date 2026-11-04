@@ -1,6 +1,6 @@
 :root {
   --ink: #23312d;
-  --muted: #87908a;
+  --muted: #515d55;
   --line: #e8ece8;
   --green: #22644d;
   --green-soft: #eaf3ed;
@@ -4423,7 +4423,7 @@ label > select {
 }
 .entry-writing-panels {
   display: grid;
-  grid-template-columns: 1.35fr 1fr 1fr;
+  grid-template-columns: minmax(0, 2.5fr) minmax(0, 1fr);
   gap: 18px;
   min-height: 160px;
   flex: 1;
@@ -5436,4 +5436,165 @@ label > select {
   .meeting-page > .save-message {
     display: none !important;
   }
+}
+
+/* Give progress reports the space and contrast used during the meeting. */
+.meeting-report-table th:first-child {
+  width: 18%;
+}
+.meeting-report-table th:nth-child(2) {
+  width: 56%;
+}
+.meeting-report-table th:nth-child(3) {
+  width: 22%;
+}
+.meeting-report-table th:last-child {
+  width: 4%;
+}
+.meeting-app .entry-comparison-panes textarea[readonly],
+.meeting-app .readable-text,
+.meeting-app .meeting-report-table td,
+.meeting-app .meeting-report-table td p,
+.meeting-app .design-agenda .section-heading p,
+.meeting-app .design-card-body p,
+.meeting-app .comparison-source,
+.meeting-app input,
+.meeting-app select,
+.meeting-app textarea {
+  color: #18221e;
+  font-weight: 500;
+}
+.meeting-app .readable-text,
+.meeting-app .meeting-report-table td > textarea,
+.meeting-app .entry-writing-panel textarea,
+.meeting-app .entry-comparison-panes textarea {
+  font-size: 16px;
+  line-height: 1.85;
+}
+.meeting-app .readable-lines {
+  max-height: 7.4em;
+}
+.meeting-app .readable-text.expanded .readable-lines {
+  max-height: none;
+}
+.meeting-app .readable-lines > p {
+  min-height: 1.85em;
+}
+.meeting-app .meeting-report-table th,
+.meeting-app .entry-metadata label,
+.meeting-app .entry-writing-panel h3,
+.meeting-app .entry-comparison-panes label,
+.meeting-app .comparison-field-tabs button,
+.meeting-app .text-button,
+.meeting-app .icon-button,
+.meeting-app .mode-switch > button:not(.active),
+.meeting-app .meeting-tabs > button:not(.active),
+.meeting-app .secondary {
+  color: #334b3b;
+  font-weight: 600;
+}
+.meeting-app .meeting-report-table th {
+  font-size: 12px;
+}
+.meeting-app .entry-metadata label,
+.meeting-app .entry-writing-panel .text-button {
+  font-size: 12px;
+}
+.meeting-app .meeting-page-title p,
+.meeting-app .meeting-report-table td:first-child small,
+.meeting-app .row-number,
+.meeting-app .row-previous,
+.meeting-app .row-previous p,
+.meeting-app .reading-controls,
+.meeting-app .reading-hint,
+.meeting-app .meeting-footer,
+.meeting-app .entry-fixed-footer > div:first-child,
+.meeting-app .entry-fixed-footer small,
+.meeting-app .entry-attachment-list small,
+.meeting-app .entry-topbar small,
+.meeting-app .entry-top-actions > span,
+.meeting-app .entry-writing-panel h3 span,
+.meeting-app .text-change-tag,
+.meeting-app .category-empty,
+.meeting-app .muted {
+  color: #4d5b51 !important;
+}
+.meeting-app .reading-controls,
+.meeting-app .reading-controls .text-button {
+  font-size: 12px;
+}
+.meeting-app .carry-change-badge {
+  color: #365431;
+}
+.meeting-app .delete-entry-button {
+  color: #8f4233;
+}
+.meeting-app .meeting-tabs small {
+  color: #4d5b51;
+}
+.meeting-app .meeting-tabs .active small {
+  color: #fff;
+}
+.meeting-app ::placeholder {
+  color: #69746c;
+  opacity: 1;
+}
+.meeting-app .legacy-plan {
+  flex-shrink: 0;
+  margin: 8px 0;
+  color: #4d5b51;
+  font-size: 12px;
+}
+.legacy-plan summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.legacy-plan p {
+  white-space: pre-wrap;
+  max-height: 100px;
+  overflow: auto;
+  padding-top: 8px;
+}
+.schedule-help {
+  color: #334b3b;
+  margin-bottom: 16px;
+}
+.schedule-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+@media (max-width: 800px) {
+  .meeting-app .readable-text,
+  .meeting-app .entry-writing-panel textarea {
+    font-size: 14px;
+  }
+  .date-edit-button {
+    padding: 8px;
+    font-size: 11px;
+  }
+}
+@media print {
+  .meeting-report-table th:first-child {
+    width: 20%;
+  }
+  .meeting-report-table th:nth-child(2) {
+    width: 58%;
+  }
+  .meeting-report-table th:nth-child(3) {
+    width: 22%;
+  }
+  .meeting-report-table th:last-child {
+    display: none;
+  }
+  .meeting-app .readable-text {
+    color: #000;
+    font-size: 10pt;
+  }
+}
+
+.meeting-app .local-banner {
+  color: #665019;
+  font-size: 12px;
 }

@@ -54,7 +54,7 @@ export function MeetingText({
           <p className="muted">—</p>
         )}
       </div>
-      {changed && <span className="text-change-tag">전주 대비 변경</span>}
+      {changed && <span className="text-change-tag">이전 회의 대비 변경</span>}
       {needsExpand && !expanded && (
         <button
           className="text-button expand-text"
@@ -73,33 +73,29 @@ export function AgendaComparison({
   agenda: Agenda;
   previous: Agenda;
 }) {
-  const [field, setField] = useState<"report" | "plan" | "decision">("report");
+  const [field, setField] = useState<"report" | "decision">("report");
   return (
     <div className="agenda-comparison">
       <div className="comparison-field-tabs">
-        {(["report", "plan", "decision"] as const).map((k) => (
+        {(["report", "decision"] as const).map((k) => (
           <button
             key={k}
             className={field === k ? "active" : ""}
             onClick={() => setField(k)}
           >
-            {
-              { report: "진행 내용", plan: "다음 계획", decision: "회의 결정" }[
-                k
-              ]
-            }
+            {{ report: "진행 내용", decision: "회의 결정" }[k]}
           </button>
         ))}
       </div>
       <div className="before-after">
         <section>
-          <h3>{agenda.carriedFrom?.date} · 전주 내용</h3>
+          <h3>{agenda.carriedFrom?.date} · 이전 회의 내용</h3>
           <div className="comparison-source">
             {previous[field] || "기록 없음"}
           </div>
         </section>
         <section>
-          <h3>이번 주 · 수정된 내용</h3>
+          <h3>이번 회의 · 수정된 내용</h3>
           <MeetingText
             value={agenda[field]}
             previous={previous[field]}
@@ -108,5 +104,15 @@ export function AgendaComparison({
         </section>
       </div>
     </div>
+  );
+}
+
+export function LegacyPlan({ value }: { value: string }) {
+  if (!value) return null;
+  return (
+    <details className="legacy-plan">
+      <summary>이전 버전의 계획 기록</summary>
+      <p>{value}</p>
+    </details>
   );
 }

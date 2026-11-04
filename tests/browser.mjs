@@ -111,8 +111,8 @@ try {
       .getByLabel("진행 내용", { exact: true })
       .fill(title + " 진행 중");
     await entry
-      .getByLabel("다음 계획", { exact: true })
-      .fill(title + " 다음 계획");
+      .getByLabel("회의 결정", { exact: true })
+      .fill(title + " 회의 결정");
     if (images)
       await entry.getByLabel("첨부파일 선택", { exact: true }).setInputFiles([
         { name: "시안-A.png", mimeType: "image/png", buffer: png },
@@ -357,8 +357,8 @@ try {
     .filter({ hasText: "회의 내용을 저장했습니다." })
     .waitFor();
   await second
-    .getByLabel("개발 전용 다음 계획", { exact: true })
-    .fill("다른 탭 다음 계획");
+    .getByLabel("개발 전용 회의 결정", { exact: true })
+    .fill("다른 탭 회의 결정");
   await second
     .getByRole("button", { name: "회의자료 저장", exact: true })
     .click();

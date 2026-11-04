@@ -85,7 +85,7 @@ import {
   ReviewDialog,
 } from "./conference-assets";
 import AgendaEntry from "./agenda-entry";
-import { MeetingText, AgendaComparison } from "./meeting-text";
+import { MeetingText, AgendaComparison, LegacyPlan } from "./meeting-text";
 import RecordingTab from "./recording-tab";
 const labels = { ...categoryLabels, recordings: "회의 녹음 내용" };
 export default function ConferenceBoard() {
@@ -122,6 +122,10 @@ export default function ConferenceBoard() {
     editorKey?: string;
   } | null>(null);
   const [metadata, setMetadata] = useState(false);
+  const [nextSession, setNextSession] = useState<{
+    sourceId: string;
+    date: string;
+  } | null>(null);
   const [startDialog, setStartDialog] = useState(false);
   const [consent, setConsent] = useState(false);
   const [review, setReview] = useState<{
@@ -438,7 +442,7 @@ export default function ConferenceBoard() {
   }, [dirty, locked]);
   async function newSession(blank = false) {
     if (meeting && !blank) {
-      await prepareNext();
+      openNextSession();
       return;
     }
     const m = newMeeting();
@@ -447,18 +451,26 @@ export default function ConferenceBoard() {
     setTab("development");
     setMetadata(true);
   }
+  function openNextSession() {
+    if (!meeting || locked) return;
+    const d = new Date(meeting.date + "T12:00:00");
+    d.setDate(d.getDate() + 7);
+    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const existing = current.current.data.meetings.find(
+      (m) => m.copiedFrom === meeting.id,
+    );
+    setNextSession({ sourceId: meeting.id, date: existing?.date || date });
+  }
   async function prepareNext() {
-    if (!meeting || locked || preparingRef.current) return;
+    if (!nextSession || locked || preparingRef.current) return;
     preparingRef.current = true;
     setPreparing(true);
     try {
-      const d = new Date(meeting.date + "T12:00:00");
-      d.setDate(d.getDate() + 7);
-      const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const { sourceId, date } = nextSession;
       const originalIds = new Set(
         current.current.data.meetings.map((m) => m.id),
       );
-      update((b) => carryMeeting(b, getMeeting(meeting.id), date));
+      update((b) => carryMeeting(b, getMeeting(sourceId), date));
       const next = current.current.data.meetings[0];
       setMeetingId(next.id);
       setCompareIds([]);
@@ -466,10 +478,11 @@ export default function ConferenceBoard() {
       setQuery("");
       if (tab === "recordings") setTab("development");
       await persist(false);
+      setNextSession(null);
       setNotice(
         originalIds.has(next.id)
-          ? "이미 만들어진 다음 주 회의를 열었습니다. 작성한 내용은 유지됩니다."
-          : "전주 보고·계획·결정·첨부자료를 이어받아 저장했습니다. 바뀐 부분만 수정하세요.",
+          ? "이미 만들어진 회의를 열었습니다. 작성한 내용은 유지됩니다."
+          : "이전 진행 내용·회의 결정·첨부자료를 이어받아 저장했습니다. 바뀐 부분만 수정하세요.",
       );
     } catch (e) {
       setError(message(e));
@@ -736,12 +749,12 @@ export default function ConferenceBoard() {
                 {meeting && (
                   <>
                     <button
-                      className="icon-button"
+                      className="secondary date-edit-button"
                       aria-label="회의 정보 수정"
                       disabled={locked}
                       onClick={() => setMetadata(true)}
                     >
-                      <CalendarDays size={18} />
+                      <CalendarDays size={16} /> 날짜 변경
                     </button>
                     <select
                       aria-label="회의 선택"
@@ -770,7 +783,7 @@ export default function ConferenceBoard() {
                   {meeting
                     ? preparing
                       ? "회의 준비 중…"
-                      : "다음 주 회의"
+                      : "다음 회의 만들기"
                     : "새 주간회의"}
                 </button>
                 <button
@@ -847,9 +860,9 @@ export default function ConferenceBoard() {
                   <button
                     className="text-button"
                     disabled={locked}
-                    onClick={() => void prepareNext()}
+                    onClick={openNextSession}
                   >
-                    다음 주 회의 준비
+                    이전 내용으로 회의 만들기
                   </button>
                 )}
               </div>
@@ -1133,6 +1146,7 @@ export default function ConferenceBoard() {
                                 디자인 이미지 추가
                               </button>
                             )}
+                            {a.plan && <LegacyPlan value={a.plan} />}
                             {a.decision && (
                               <p className="design-decision">
                                 회의 결정: {a.decision}
@@ -1148,7 +1162,6 @@ export default function ConferenceBoard() {
                             <tr>
                               <th>제품 / 안건</th>
                               <th>진행 내용</th>
-                              <th>다음 계획</th>
                               <th>회의 결정</th>
                               <th className="no-print" aria-label="편집" />
                             </tr>
@@ -1171,7 +1184,7 @@ export default function ConferenceBoard() {
                                         previousAgenda(store.data, a),
                                       ).length
                                         ? `수정 ${agendaChangedFields(a, previousAgenda(store.data, a)).length}곳`
-                                        : "전주 유지"}{" "}
+                                        : "이전 내용 유지"}{" "}
                                       · 비교
                                     </button>
                                   )}
@@ -1211,6 +1224,7 @@ export default function ConferenceBoard() {
                                       expanded={expandedAll}
                                     />
                                   )}
+                                  {a.plan && <LegacyPlan value={a.plan} />}
                                   {!!a.visuals.length && (
                                     <div className="table-attachments">
                                       {a.visuals.map((v) =>
@@ -1242,29 +1256,6 @@ export default function ConferenceBoard() {
                                         ),
                                       )}
                                     </div>
-                                  )}
-                                </td>
-                                <td>
-                                  {writing ? (
-                                    <textarea
-                                      aria-label={`${a.title} 다음 계획`}
-                                      rows={5}
-                                      maxLength={30000}
-                                      value={a.plan}
-                                      onChange={(e) =>
-                                        patchAgenda(a.id, {
-                                          plan: e.target.value,
-                                        })
-                                      }
-                                    />
-                                  ) : (
-                                    <MeetingText
-                                      value={a.plan}
-                                      previous={
-                                        previousAgenda(store.data, a)?.plan
-                                      }
-                                      expanded={expandedAll}
-                                    />
                                   )}
                                 </td>
                                 <td>
@@ -1466,10 +1457,10 @@ export default function ConferenceBoard() {
                 className="modal agenda-change-dialog"
                 role="dialog"
                 aria-modal="true"
-                aria-label="전주 변경 비교"
+                aria-label="이전 회의 변경 비교"
               >
                 <div className="section-heading">
-                  <h2>{a.title} · 전주와 비교</h2>
+                  <h2>{a.title} · 이전 회의와 비교</h2>
                   <button
                     className="icon-button"
                     aria-label="변경 비교 닫기"
@@ -1483,6 +1474,73 @@ export default function ConferenceBoard() {
             </div>
           ) : null;
         })()}
+      {nextSession && (
+        <div className="modal-backdrop">
+          <section
+            className="modal small-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="다음 회의 만들기"
+          >
+            <div className="section-heading">
+              <h2>다음 회의 만들기</h2>
+              <button
+                className="icon-button"
+                aria-label="다음 회의 만들기 닫기"
+                disabled={preparing}
+                onClick={() => setNextSession(null)}
+              >
+                <X />
+              </button>
+            </div>
+            <p className="schedule-help">
+              회의 날짜를 선택하세요. 요일에 관계없이 이전 진행
+              내용·결정·첨부자료를 이어받습니다.
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void prepareNext();
+              }}
+            >
+              <label>
+                회의 날짜
+                <input
+                  type="date"
+                  required
+                  value={nextSession.date}
+                  disabled={preparing}
+                  onChange={(e) =>
+                    setNextSession({ ...nextSession, date: e.target.value })
+                  }
+                />
+              </label>
+              <div className="schedule-actions">
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={preparing}
+                  onClick={() => setNextSession(null)}
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  className="primary"
+                  disabled={preparing || !nextSession.date}
+                >
+                  {preparing ? "회의 준비 중…" : "내용 이어서 만들기"}
+                </button>
+              </div>
+            </form>
+            {error && (
+              <p className="error" role="alert">
+                {error}
+              </p>
+            )}
+          </section>
+        </div>
+      )}
       {metadata && meeting && (
         <div className="modal-backdrop">
           <section
@@ -1554,9 +1612,14 @@ export default function ConferenceBoard() {
             </label>
             <button
               className="primary full"
-              onClick={() => {
-                setMetadata(false);
-                void manualSave();
+              disabled={saving > 0 || !meeting.date || !meeting.title.trim()}
+              onClick={async () => {
+                try {
+                  await persist();
+                  setMetadata(false);
+                } catch (e) {
+                  setError(message(e));
+                }
               }}
             >
               저장하고 닫기

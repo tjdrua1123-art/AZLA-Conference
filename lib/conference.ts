@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { v5 as uuidV5 } from "uuid";
-import { nextMonday } from "./types";
+import { todayInSeoul } from "./types";
 import { aiSchema } from "./ai";
 export const reviewLabels = {
   pending: "검토 대기",
@@ -194,7 +194,7 @@ export function newAgenda(title = "새 안건"): Agenda {
     visuals: [],
   };
 }
-export function newMeeting(date = nextMonday()): Session {
+export function newMeeting(date = todayInSeoul()): Session {
   return {
     id: crypto.randomUUID(),
     title: "음향기술연구소 주간회의",

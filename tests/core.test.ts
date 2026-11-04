@@ -47,3 +47,14 @@ test("AI rejects invented evidence; clears owner/date not supported by evidence"
   assert.equal(result.tasks[0].due_date, null);
   assert.throws(() => validateEvidence(data, "해당 내용은 존재하지 않음"));
 });
+
+test("new workspace meetings use today's Korean date and allow any weekday", async () => {
+  const { todayInSeoul } = await import("../lib/types");
+  const { newMeeting, sessionSchema } = await import("../lib/conference");
+  assert.equal(todayInSeoul(new Date("2026-11-04T16:00:00Z")), "2026-11-05");
+  assert.equal(newMeeting().date, todayInSeoul());
+  assert.equal(
+    sessionSchema.parse(newMeeting("2026-11-13")).date,
+    "2026-11-13",
+  );
+});

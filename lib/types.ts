@@ -45,6 +45,9 @@ export type Revision = {
 };
 export const canWrite = (p: Profile | null) =>
   !!p?.active && p.role !== "viewer";
+export function todayInSeoul(now = new Date()) {
+  return now.toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
+}
 export function nextMonday(now = new Date()) {
   const d = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
   d.setDate(d.getDate() + ((8 - d.getDay()) % 7));
