@@ -44,6 +44,8 @@ values ('실제-Auth-User-UUID', '관리자 이름', 'admin');
 
 ## 4. Vercel (승인 후 사용자가 배포)
 
+- 저장소의 `vercel.json`이 프레임워크를 `nextjs`, 출력 폴더를 `.next`로 명시합니다. 기존 프로젝트가 일반 정적 사이트로 인식되어 `public` 폴더를 찾는 오류를 방지하기 위한 설정입니다. 이 파일이 추가된 **최신 커밋의 배포**를 확인하세요. 이전 커밋을 Redeploy하면 새 파일이 포함되지 않습니다.
+
 - GitHub 저장소를 Import하고 Framework를 Next.js로 선택합니다. Root Directory는 프로젝트 루트입니다.
 - Node.js 24(또는 22 이상), Install `npm ci`, Build `npm run build`, Output은 Next.js 기본값을 사용합니다.
 - Production 환경변수와 Supabase Site URL/redirect를 일치시킵니다. Preview 배포에는 운영 데이터 접근 키를 공유하지 않고 별도 테스트 Supabase 프로젝트를 권장합니다.
