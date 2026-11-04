@@ -1,0 +1,91 @@
+import type { Meeting, Task, Profile } from "./types";
+export const demoPeople: Profile[] = [
+  { id: "demo-1", name: "김민준", role: "admin", active: true },
+  { id: "demo-2", name: "이서연", role: "editor", active: true },
+  { id: "demo-3", name: "박지훈", role: "editor", active: true },
+];
+export const demoMeetings: Meeting[] = [
+  [
+    "1",
+    "2026-11-02",
+    "11월 1주차 주간회의",
+    "SEDNAEARFIT",
+    "신제품 샘플 측정 및 패키지 개발 현황",
+  ],
+  [
+    "2",
+    "2026-10-26",
+    "10월 4주차 주간회의",
+    "ASE-500",
+    "2차 시제품 검토 및 개발 일정 점검",
+  ],
+  [
+    "3",
+    "2026-10-19",
+    "10월 3주차 주간회의",
+    "SEDNAEARFIT",
+    "소재별 착용감 평가 및 피드백 공유",
+  ],
+  [
+    "4",
+    "2026-10-12",
+    "10월 2주차 주간회의",
+    "CRYSTAL",
+    "측정 데이터 분석 및 개선 방향 논의",
+  ],
+].map(([id, date, title, product, agenda], i) => ({
+  id,
+  meeting_date: date,
+  title,
+  product,
+  agenda,
+  notes: "샘플 데이터입니다. 실제 회의 또는 제품 개발 현황이 아닙니다.",
+  transcript: "",
+  summary: agenda,
+  discussion:
+    "제품 개발 현황을 공유하고 측정 결과를 검토했습니다.\n세부 확인 사항은 다음 회의에서 다시 점검합니다.",
+  decisions: "추가 측정 결과를 확인한 후 최종 사양을 결정합니다.",
+  status: i === 0 ? "draft" : "final",
+  ai_reviewed: i !== 0,
+  version: 1,
+  created_at: date,
+  updated_at: date,
+}));
+export const demoTasks: Task[] = [
+  {
+    id: "t1",
+    title: "2차 샘플 주파수 응답 측정",
+    product: "SEDNAEARFIT",
+    owner_id: "demo-2",
+    due_date: "2026-11-06",
+    status: "doing",
+    created_at: "2026-11-02",
+  },
+  {
+    id: "t2",
+    title: "패키지 디자인 수정안 검토",
+    product: "SEDNAEARFIT",
+    owner_id: "demo-1",
+    due_date: "2026-11-09",
+    status: "todo",
+    created_at: "2026-11-02",
+  },
+  {
+    id: "t3",
+    title: "시제품 착용감 피드백 정리",
+    product: "ASE-500",
+    owner_id: "demo-3",
+    due_date: "2026-11-06",
+    status: "doing",
+    created_at: "2026-10-26",
+  },
+  {
+    id: "t4",
+    title: "소재별 내구성 테스트 결과 공유",
+    product: "CRYSTAL",
+    owner_id: "demo-2",
+    due_date: "2026-11-02",
+    status: "done",
+    created_at: "2026-10-26",
+  },
+];
