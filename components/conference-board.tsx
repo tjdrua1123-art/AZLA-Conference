@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Cloud,
   Edit3,
-  FileText,
   History,
   Image as ImageIcon,
   Layers,
@@ -80,13 +79,13 @@ import { type AIDraft } from "@/lib/ai";
 import {
   AssetImage,
   CompareDialog,
-  downloadAsset,
   downloadBlob,
   ReviewDialog,
 } from "./conference-assets";
 import AgendaEntry from "./agenda-entry";
-import { MeetingText, AgendaComparison, LegacyPlan } from "./meeting-text";
+import { AgendaComparison, LegacyPlan, MeetingText } from "./meeting-text";
 import RecordingTab from "./recording-tab";
+import ProjectOverview, { ProjectNavigator } from "./project-overview";
 const labels = { ...categoryLabels, recordings: "회의 녹음 내용" };
 export default function ConferenceBoard() {
   const [store, setStore] = useState<StoredBoard>({
@@ -962,7 +961,16 @@ export default function ConferenceBoard() {
                   <>
                     <div className="category-heading">
                       <div>
-                        <h2>{categoryLabels[tab]}</h2>
+                        {tab !== "design" && visible.length > 1 ? (
+                          <>
+                            <h2 className="print-category-heading">
+                              {categoryLabels[tab]}
+                            </h2>
+                            <ProjectNavigator agendas={visible} />
+                          </>
+                        ) : (
+                          <h2>{categoryLabels[tab]}</h2>
+                        )}
                         <p>
                           {tab === "design"
                             ? "디자인 분류로 등록한 시안과 검토 내용만 모아봅니다."
@@ -1026,242 +1034,146 @@ export default function ConferenceBoard() {
                         {expandedAll ? "핵심만 보기" : "전체 내용 펼치기"}
                       </button>
                       <span className="reading-hint">
-                        수정된 문장은 옅은 초록색으로 표시됩니다.
+                        바뀐 문장부터 보고, 필요한 내용은 펼쳐 읽으세요.
                       </span>
                     </div>
-                    {tab === "design" ? (
-                      <div className="design-gallery">
-                        {visible.map((a) => (
-                          <section className="design-agenda panel" key={a.id}>
-                            <div className="section-heading">
-                              <div>
-                                <h3>{a.product || a.title}</h3>
-                                <p>
-                                  {a.report ||
-                                    "검토할 시안과 설명을 입력해 주세요."}
-                                </p>
-                              </div>
-                              <button
-                                className="icon-button delete-entry-button"
-                                aria-label={`${a.title} 삭제`}
-                                onClick={() => void removeEntry(a)}
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                              <button
-                                className="text-button"
-                                aria-label={`${a.title} 수정`}
-                                onClick={() =>
-                                  setEntry({ initial: a, category: "design" })
-                                }
-                              >
-                                <Edit3 size={14} />
-                                내용 수정
-                              </button>
-                            </div>
-                            <div className="visual-grid">
-                              {a.visuals
-                                .filter((v) => v.mime.startsWith("image/"))
-                                .map((v) => (
-                                  <article className="design-card" key={v.id}>
-                                    <div className="design-card-top">
-                                      <label className="compare-check">
-                                        <input
-                                          type="checkbox"
-                                          aria-label={`${v.label} 비교 선택`}
-                                          checked={compareIds.includes(v.id)}
-                                          disabled={
-                                            !compareIds.includes(v.id) &&
-                                            compareIds.length >= 2
-                                          }
-                                          onChange={(e) =>
-                                            setCompareIds((ids) =>
-                                              e.target.checked
-                                                ? [...ids, v.id]
-                                                : ids.filter(
-                                                    (id) => id !== v.id,
-                                                  ),
-                                            )
-                                          }
-                                        />
-                                        비교
-                                      </label>
-                                      <span
-                                        className={`review-badge ${v.status}`}
-                                      >
-                                        {v.carriedFrom ? "이전 " : ""}
-                                        {reviewLabels[v.status]}
-                                      </span>
-                                    </div>
-                                    <AssetImage
-                                      mode={mode}
-                                      file={v}
-                                      onClick={() =>
-                                        setReview({ agendaId: a.id, file: v })
-                                      }
-                                    />
-                                    <div className="design-card-body">
-                                      <strong>{v.label}</strong>
-                                      <p>
-                                        {v.comment ||
-                                          "이미지를 눌러 확대하고 검토 의견을 남겨 주세요."}
-                                      </p>
-                                      <button
-                                        className="primary full"
-                                        onClick={() =>
-                                          setReview({ agendaId: a.id, file: v })
-                                        }
-                                      >
-                                        시안 검토
-                                      </button>
-                                    </div>
-                                  </article>
-                                ))}
-                            </div>
-                            {!a.visuals.some((v) =>
-                              v.mime.startsWith("image/"),
-                            ) && (
-                              <button
-                                className="image-dropzone"
-                                onClick={() =>
-                                  setEntry({ initial: a, category: "design" })
-                                }
-                              >
-                                <ImageIcon size={25} />
-                                디자인 이미지 추가
-                              </button>
-                            )}
-                            {a.plan && <LegacyPlan value={a.plan} />}
-                            {a.decision && (
-                              <p className="design-decision">
-                                회의 결정: {a.decision}
-                              </p>
-                            )}
-                          </section>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="panel meeting-table-wrap">
-                        <table className="meeting-report-table">
-                          <thead>
-                            <tr>
-                              <th>제품 / 안건</th>
-                              <th>진행 내용</th>
-                              <th>회의 결정</th>
-                              <th className="no-print" aria-label="편집" />
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {visible.map((a, i) => (
-                              <tr key={a.id}>
-                                <td>
-                                  <span className="row-number">
-                                    {String(i + 1).padStart(2, "0")}
-                                  </span>
-                                  <strong>{a.title}</strong>
-                                  {a.carriedFrom && (
-                                    <button
-                                      className={`carry-change-badge ${agendaChangedFields(a, previousAgenda(store.data, a)).length ? "modified" : ""}`}
-                                      onClick={() => setComparisonAgenda(a.id)}
-                                    >
-                                      {agendaChangedFields(
-                                        a,
-                                        previousAgenda(store.data, a),
-                                      ).length
-                                        ? `수정 ${agendaChangedFields(a, previousAgenda(store.data, a)).length}곳`
-                                        : "이전 내용 유지"}{" "}
-                                      · 비교
-                                    </button>
-                                  )}
-                                  {a.product && a.product !== a.title && (
-                                    <small>{a.product}</small>
-                                  )}
-                                  {(previousAgenda(store.data, a) ||
-                                    a.previous) && (
-                                    <details className="row-previous">
-                                      <summary>지난 보고 보기</summary>
-                                      <p>
-                                        {previousAgenda(store.data, a)
-                                          ?.report || a.previous}
-                                      </p>
-                                    </details>
-                                  )}
-                                </td>
-                                <td>
+                    {visible.length > 0 &&
+                      (tab === "design" ? (
+                        <div className="design-gallery">
+                          {visible.map((a) => (
+                            <section className="design-agenda panel" key={a.id}>
+                              <div className="section-heading">
+                                <div>
+                                  <h3>{a.product || a.title}</h3>
                                   <MeetingText
                                     value={a.report}
                                     previous={
                                       previousAgenda(store.data, a)?.report
                                     }
                                     expanded={expandedAll}
+                                    prioritizeChanges
                                   />
-                                  {a.plan && <LegacyPlan value={a.plan} />}
-                                  {!!a.visuals.length && (
-                                    <div className="table-attachments">
-                                      {a.visuals.map((v) =>
-                                        v.mime.startsWith("image/") ? (
-                                          <AssetImage
-                                            key={v.id}
-                                            mode={mode}
-                                            file={v}
-                                            onClick={() =>
-                                              setReview({
-                                                agendaId: a.id,
-                                                file: v,
-                                              })
+                                </div>
+                                <button
+                                  className="icon-button delete-entry-button"
+                                  aria-label={`${a.title} 삭제`}
+                                  onClick={() => void removeEntry(a)}
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                                <button
+                                  className="text-button"
+                                  aria-label={`${a.title} 수정`}
+                                  onClick={() =>
+                                    setEntry({ initial: a, category: "design" })
+                                  }
+                                >
+                                  <Edit3 size={14} />
+                                  내용 수정
+                                </button>
+                              </div>
+                              <div className="visual-grid">
+                                {a.visuals
+                                  .filter((v) => v.mime.startsWith("image/"))
+                                  .map((v) => (
+                                    <article className="design-card" key={v.id}>
+                                      <div className="design-card-top">
+                                        <label className="compare-check">
+                                          <input
+                                            type="checkbox"
+                                            aria-label={`${v.label} 비교 선택`}
+                                            checked={compareIds.includes(v.id)}
+                                            disabled={
+                                              !compareIds.includes(v.id) &&
+                                              compareIds.length >= 2
                                             }
-                                          />
-                                        ) : (
-                                          <button
-                                            key={v.id}
-                                            className="text-button"
-                                            onClick={() =>
-                                              void downloadAsset(mode, v).catch(
-                                                (e) => setError(message(e)),
+                                            onChange={(e) =>
+                                              setCompareIds((ids) =>
+                                                e.target.checked
+                                                  ? [...ids, v.id]
+                                                  : ids.filter(
+                                                      (id) => id !== v.id,
+                                                    ),
                                               )
                                             }
-                                          >
-                                            <FileText size={13} />
-                                            {v.name}
-                                          </button>
-                                        ),
-                                      )}
-                                    </div>
-                                  )}
-                                </td>
-                                <td>
-                                  <MeetingText
-                                    value={a.decision}
-                                    previous={
-                                      previousAgenda(store.data, a)?.decision
-                                    }
-                                    expanded={expandedAll}
-                                  />
-                                </td>
-                                <td className="no-print">
-                                  <button
-                                    className="icon-button"
-                                    aria-label={`${a.title} 수정`}
-                                    onClick={() =>
-                                      setEntry({ initial: a, category: tab })
-                                    }
-                                  >
-                                    <Edit3 size={16} />
-                                  </button>
-                                  <button
-                                    className="icon-button delete-entry-button"
-                                    aria-label={`${a.title} 삭제`}
-                                    onClick={() => void removeEntry(a)}
-                                  >
-                                    <Trash2 size={15} />
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
+                                          />
+                                          비교
+                                        </label>
+                                        <span
+                                          className={`review-badge ${v.status}`}
+                                        >
+                                          {v.carriedFrom ? "이전 " : ""}
+                                          {reviewLabels[v.status]}
+                                        </span>
+                                      </div>
+                                      <AssetImage
+                                        mode={mode}
+                                        file={v}
+                                        onClick={() =>
+                                          setReview({ agendaId: a.id, file: v })
+                                        }
+                                      />
+                                      <div className="design-card-body">
+                                        <strong>{v.label}</strong>
+                                        <p>
+                                          {v.comment ||
+                                            "이미지를 눌러 확대하고 검토 의견을 남겨 주세요."}
+                                        </p>
+                                        <button
+                                          className="primary full"
+                                          onClick={() =>
+                                            setReview({
+                                              agendaId: a.id,
+                                              file: v,
+                                            })
+                                          }
+                                        >
+                                          시안 검토
+                                        </button>
+                                      </div>
+                                    </article>
+                                  ))}
+                              </div>
+                              {!a.visuals.some((v) =>
+                                v.mime.startsWith("image/"),
+                              ) && (
+                                <button
+                                  className="image-dropzone"
+                                  onClick={() =>
+                                    setEntry({ initial: a, category: "design" })
+                                  }
+                                >
+                                  <ImageIcon size={25} />
+                                  디자인 이미지 추가
+                                </button>
+                              )}
+                              {a.plan && <LegacyPlan value={a.plan} />}
+                              {a.decision && (
+                                <p className="design-decision">
+                                  회의 결정: {a.decision}
+                                </p>
+                              )}
+                            </section>
+                          ))}
+                        </div>
+                      ) : (
+                        <ProjectOverview
+                          key={`${meeting.id}-${tab}`}
+                          agendas={visible}
+                          board={store.data}
+                          mode={mode}
+                          expanded={expandedAll}
+                          onEdit={(a) =>
+                            setEntry({ initial: a, category: tab })
+                          }
+                          onDelete={(a) => void removeEntry(a)}
+                          onCompare={setComparisonAgenda}
+                          onReview={(a, file) =>
+                            setReview({ agendaId: a.id, file })
+                          }
+                          onError={setError}
+                        />
+                      ))}
                     {!visible.length && (
                       <div className="panel category-empty">
                         <h3>
@@ -1272,7 +1184,7 @@ export default function ConferenceBoard() {
                         <p>
                           {query
                             ? "검색어를 바꾸어 주세요."
-                            : "위의 등록 버튼으로 진행 내용, 계획과 자료를 입력하세요."}
+                            : "위의 등록 버튼으로 진행 내용, 회의 결정과 자료를 입력하세요."}
                         </p>
                       </div>
                     )}

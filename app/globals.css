@@ -3298,6 +3298,7 @@ label > select {
   animation: rec-pulse 1.5s ease-in-out infinite;
 }
 .meeting-page {
+  width: 100%;
   max-width: 1900px;
   margin: 0 auto;
   padding: 28px 32px 45px;
@@ -5564,4 +5565,419 @@ label > select {
 .meeting-app .local-banner {
   color: #665019;
   font-size: 12px;
+}
+
+/* Project identity, progress and decisions remain visible together in one board. */
+.project-overview {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.project-navigator {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+.project-navigator > span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #526156;
+  white-space: nowrap;
+}
+.project-navigator > div {
+  display: flex;
+  gap: 7px;
+  min-width: 0;
+  overflow: auto;
+  padding: 2px 1px 5px;
+}
+.project-navigator button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  border: 1px solid #d8e2db;
+  border-radius: 6px;
+  background: #fff;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: #263c30;
+}
+.project-navigator button b {
+  font-size: 11px;
+  color: #65756b;
+}
+.project-navigator button:hover {
+  border-color: #22644d;
+  background: #edf5ef;
+}
+.project-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 2px 4px 8px 1px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  scroll-padding: 3px;
+}
+.project-card {
+  background: #fff;
+  border: 1px solid #dce4df;
+  border-radius: 10px;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 5px #23382b06;
+  scroll-margin-top: 4px;
+}
+.project-card:focus {
+  outline: 3px solid #338461;
+  outline-offset: -3px;
+}
+.project-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 19px 12px;
+  border-bottom: 1px solid #e6ece8;
+  background: #fbfcfa;
+}
+.project-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 35px;
+  height: 35px;
+  flex-shrink: 0;
+  background: #e8f1eb;
+  color: #285b40;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.project-identity {
+  flex: 1;
+  min-width: 0;
+}
+.project-identity h3 {
+  font-size: 23px;
+  line-height: 1.25;
+  letter-spacing: -0.6px;
+  color: #172c20;
+  overflow-wrap: anywhere;
+}
+.project-identity p {
+  color: #4d5b51;
+  font-size: 13px;
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+}
+.project-state {
+  display: inline-flex;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 5px;
+  color: #4c5b50;
+  background: #eef1ed;
+}
+.project-state.new {
+  color: #245d84;
+  background: #eaf3fb;
+}
+.project-state.changed {
+  color: #775014;
+  background: #fff0d3;
+}
+.project-card-heading .project-compare {
+  font-size: 12px;
+  white-space: nowrap;
+}
+.project-card-heading .project-edit {
+  padding: 7px 10px;
+  font-size: 12px;
+}
+.project-card-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 0.4fr);
+  gap: 24px;
+  padding: 16px 20px 18px;
+}
+.project-card-body.with-images {
+  grid-template-columns: minmax(0, 1fr) minmax(210px, 0.48fr) minmax(
+      200px,
+      0.48fr
+    );
+}
+.project-card-body > section {
+  min-width: 0;
+}
+.project-card-body h4 {
+  font-size: 12px;
+  letter-spacing: 0;
+  color: #4a5e51;
+  font-weight: 700;
+  margin-bottom: 9px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.project-card-body h4 small {
+  font-size: 11px;
+  color: #506459;
+  font-weight: 400;
+}
+.meeting-app .project-progress .readable-text {
+  font-size: 18px;
+  line-height: 1.7;
+}
+.project-progress .readable-lines {
+  max-height: 5.1em;
+}
+.meeting-app .project-progress .readable-lines > p {
+  min-height: 1.7em;
+}
+.project-progress .readable-text.expanded .readable-lines {
+  max-height: none;
+}
+.project-decision {
+  padding: 12px 15px;
+  border-radius: 7px;
+  background: #f4f6f3;
+  border: 1px solid #e6ebe5;
+  align-self: start;
+}
+.project-decision.recorded {
+  background: #fff8e9;
+  border-color: #ebd9af;
+}
+.project-decision.recorded h4 {
+  color: #72501c;
+}
+.meeting-app .project-decision .readable-text {
+  color: #342d20;
+  font-size: 16px;
+  line-height: 1.7;
+}
+.project-decision .readable-lines {
+  max-height: 5.1em;
+}
+.meeting-app .project-decision .readable-lines > p {
+  min-height: 1.7em;
+}
+.project-decision .readable-text.expanded .readable-lines {
+  max-height: none;
+}
+.decision-placeholder {
+  color: #5b645d;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.project-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 10px;
+}
+.project-files button {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.project-image-strip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  overflow: auto;
+  padding: 2px 2px 6px;
+}
+.project-image-strip .visual-image {
+  flex: 0 0 134px;
+  width: 134px;
+  height: 95px;
+  border: 1px solid #dce4dd;
+  border-radius: 6px;
+  padding: 4px;
+  background: #f9fbf8;
+}
+.project-image-strip .visual-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.project-media h4 {
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+.project-card .expand-text {
+  font-size: 12px;
+}
+.changed-excerpt {
+  max-height: 5.1em;
+  overflow: hidden;
+}
+.changed-excerpt > p {
+  font-size: inherit;
+  line-height: inherit;
+  white-space: pre-wrap;
+  margin: 0;
+}
+.readable-lines.original-collapsed {
+  display: none;
+}
+.design-agenda .section-heading h3 {
+  font-size: 23px;
+  color: #172c20;
+}
+.meeting-app .design-agenda .design-decision {
+  color: #342d20;
+  background: #fff8e9;
+  border: 1px solid #ebd9af;
+  padding: 14px 17px;
+  margin: 14px 20px 0;
+  border-radius: 7px;
+  font-size: 16px;
+  line-height: 1.7;
+}
+@media (max-width: 1100px) {
+  .project-card-body.with-images {
+    grid-template-columns: minmax(0, 1fr) minmax(210px, 0.6fr);
+  }
+  .project-card-body.with-images .project-progress {
+    grid-row: span 2;
+  }
+  .project-card-body.with-images .project-media {
+    grid-column: 2;
+  }
+  .project-card-body.with-images {
+    gap: 12px 20px;
+  }
+  .project-image-strip .visual-image {
+    height: 75px;
+    flex-basis: 105px;
+    width: 105px;
+  }
+  .project-card-heading .project-compare {
+    display: none;
+  }
+}
+@media (max-width: 800px) {
+  .project-overview {
+    min-height: 0;
+    flex: none;
+  }
+  .project-list {
+    overflow: visible;
+  }
+  .project-card-heading {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 13px;
+  }
+  .project-identity h3 {
+    font-size: 21px;
+  }
+  .project-identity p {
+    font-size: 12px;
+  }
+  .project-state {
+    font-size: 11px;
+  }
+  .project-card-body,
+  .project-card-body.with-images {
+    grid-template-columns: 1fr;
+    gap: 15px;
+    padding: 14px;
+  }
+  .project-card-body.with-images .project-progress {
+    grid-row: auto;
+  }
+  .project-card-body.with-images .project-media {
+    grid-column: auto;
+  }
+  .meeting-app .project-progress .readable-text {
+    font-size: 16px;
+  }
+  .project-card-heading .project-edit {
+    font-size: 11px;
+  }
+  .project-navigator {
+    margin-top: 3px;
+    gap: 8px;
+  }
+  .project-navigator button {
+    padding: 6px 9px;
+    font-size: 12px;
+  }
+}
+@media print {
+  .project-overview,
+  .project-list {
+    display: block;
+    overflow: visible;
+    height: auto;
+  }
+  .project-navigator,
+  .project-card-heading > button {
+    display: none !important;
+  }
+  .project-card {
+    break-inside: avoid;
+    margin-bottom: 5mm;
+    box-shadow: none;
+  }
+  .project-card-body,
+  .project-card-body.with-images {
+    gap: 4mm;
+  }
+  .project-card .readable-lines,
+  .readable-lines.original-collapsed {
+    display: block !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .changed-excerpt {
+    display: none !important;
+  }
+  .project-image-strip {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+  .meeting-app .project-progress .readable-text,
+  .meeting-app .project-decision .readable-text {
+    font-size: 10pt;
+    color: #000;
+  }
+}
+
+.category-heading > div:first-child {
+  min-width: 0;
+  flex: 1;
+}
+.category-heading .project-navigator {
+  margin: 0;
+}
+.category-heading > div:last-child {
+  flex-shrink: 0;
+}
+.design-agenda .section-heading > div {
+  min-width: 0;
+  flex: 1;
+}
+.design-agenda .section-heading .readable-text {
+  margin-top: 9px;
+}
+
+.print-category-heading {
+  display: none;
+}
+@media print {
+  .category-heading .print-category-heading {
+    display: block !important;
+  }
 }

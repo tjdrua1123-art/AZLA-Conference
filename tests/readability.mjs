@@ -182,11 +182,11 @@ try {
   const sourceId = state.data.meetings[0].id;
   const sourceAgenda = structuredClone(state.data.meetings[0].agenda[0]);
   const reportColor = await page
-    .locator(".meeting-report-table .readable-lines p")
+    .locator(".project-progress .readable-lines p")
     .first()
     .evaluate((el) => getComputedStyle(el).color);
   assert.ok(contrastOnWhite(reportColor) >= 7);
-  const clipped = page.locator(".meeting-report-table .readable-lines").first();
+  const clipped = page.locator(".project-progress .readable-lines").first();
   assert.ok(await clipped.evaluate((el) => el.scrollHeight > el.clientHeight));
   await page
     .getByRole("button", { name: "내용 펼치기", exact: true })
@@ -284,8 +284,32 @@ try {
     .click();
   await dialog.waitFor({ state: "hidden" });
   assert.ok((await page.locator(".changed-line").count()) > 0);
-  assert.ok((await page.getByRole("button", { name: /수정 1곳/ }).count()) > 0);
-  await page.getByRole("button", { name: /수정 1곳/ }).click();
+  assert.equal(
+    await page.locator(".project-state.changed").textContent(),
+    "변경 1곳",
+  );
+  const excerpt = page.locator(".project-progress .changed-excerpt");
+  await excerpt.waitFor();
+  assert.equal((await excerpt.textContent()).trim(), "새로운 수정 사항");
+  await page
+    .locator(".project-progress")
+    .getByRole("button", { name: "내용 펼치기", exact: true })
+    .click();
+  assert.ok(
+    (
+      await page.locator(".project-progress .readable-lines").textContent()
+    ).includes(report.replaceAll("\n", "")),
+  );
+  await page
+    .locator(".project-progress")
+    .getByRole("button", { name: "접기", exact: true })
+    .click();
+  await page
+    .getByRole("button", {
+      name: "샘플 개발 현황 이전 회의와 비교",
+      exact: true,
+    })
+    .click();
   await page.getByRole("dialog", { name: "이전 회의 변경 비교" }).waitFor();
   await page
     .getByRole("button", { name: "변경 비교 닫기", exact: true })
@@ -380,6 +404,89 @@ try {
     report + "\n새로운 수정 사항",
   );
   await dialog.getByRole("button", { name: "닫기", exact: true }).click();
+  for (const [title, product, progress, decision] of [
+    [
+      "금형 샘플 검토",
+      "제품 B",
+      "1차 샘플 조립 확인 완료\n체결부 유격 개선안 검토 중\n수정 시안은 첨부 자료로 비교",
+      "수정 방향 확인 후 2차 샘플 진행",
+    ],
+    [
+      "회로 검증 진행",
+      "제품 C",
+      "측정 결과 취합 완료\n노이즈 원인 비교 측정 중",
+      "",
+    ],
+  ]) {
+    await page.getByRole("button", { name: "안건 등록", exact: true }).click();
+    const entry = page.getByRole("dialog", { name: "안건 등록", exact: true });
+    await entry.getByLabel("안건 제목", { exact: true }).fill(title);
+    await entry.getByLabel("제품명", { exact: true }).fill(product);
+    await entry.getByLabel("진행 내용", { exact: true }).fill(progress);
+    await entry.getByLabel("회의 결정", { exact: true }).fill(decision);
+    await entry
+      .getByRole("button", { name: "저장 후 닫기", exact: true })
+      .click();
+    await entry.waitFor({ state: "hidden" });
+  }
+  const navigator = page.getByRole("navigation", { name: "프로젝트 바로가기" });
+  assert.equal(await navigator.getByRole("button").count(), 3);
+  await navigator.getByRole("button").last().click();
+  assert.equal(
+    await page.locator(".meeting-page").evaluate((el) => el.scrollTop),
+    0,
+  );
+  assert.ok(
+    await page
+      .locator(".meeting-tabs")
+      .evaluate(
+        (el) =>
+          el.getBoundingClientRect().top >=
+          document.querySelector(".meeting-app-header").getBoundingClientRect()
+            .bottom,
+      ),
+  );
+  assert.equal(
+    await page.evaluate(() =>
+      document.activeElement?.getAttribute("aria-label"),
+    ),
+    "제품 C 프로젝트",
+  );
+  assert.equal(await page.locator(".project-decision.recorded").count(), 2);
+  await page.locator(".decision-placeholder").waitFor();
+  assert.equal(
+    await page.evaluate(
+      () => document.documentElement.scrollHeight <= innerHeight + 1,
+    ),
+    true,
+  );
+  await navigator.getByRole("button").first().click();
+  // Printing must include the original report, not only the changed excerpt.
+  await page.emulateMedia({ media: "print" });
+  await page
+    .locator(".project-progress .readable-lines")
+    .first()
+    .waitFor({ state: "visible" });
+  assert.ok(
+    (
+      await page
+        .locator(".project-progress .readable-lines")
+        .first()
+        .textContent()
+    ).includes(report.replaceAll("\n", "")),
+  );
+  assert.equal(
+    await page.locator(".project-progress .changed-excerpt").isVisible(),
+    false,
+  );
+  await page.emulateMedia({ media: "screen" });
+  await page
+    .locator(".project-list")
+    .evaluate((el) => el.scrollTo({ top: 0, behavior: "instant" }));
+  await page.screenshot({
+    path: "/tmp/azla-project-overview.png",
+    fullPage: true,
+  });
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(
     await page.evaluate(
@@ -387,9 +494,13 @@ try {
     ),
     true,
   );
+  await page.screenshot({
+    path: "/tmp/azla-project-mobile.png",
+    fullPage: true,
+  });
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: wide two-column high-contrast editor, flexible meeting dates, persistent save/Ctrl+S, readable expansion, complete weekly copy, prior-week comparison, duplicate preparation protection, soft delete/restore, original preservation and attachment availability.",
+    "PASS: project overview/navigation, changed-lines-first with full print preservation, wide high-contrast editor, flexible meeting dates, persistent save/Ctrl+S, readable expansion, complete weekly copy, prior-week comparison, duplicate preparation protection, soft delete/restore, original preservation and attachment availability.",
   );
 } finally {
   await browser.close();

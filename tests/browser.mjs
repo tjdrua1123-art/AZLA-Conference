@@ -384,10 +384,7 @@ try {
   await secondEditor.waitFor({ state: "hidden" });
   await second.getByText("동시 수정 진행", { exact: true }).waitFor();
   await second.getByText("다른 탭 회의 결정", { exact: true }).waitFor();
-  assert.equal(
-    await second.locator(".meeting-report-table textarea").count(),
-    0,
-  );
+  assert.equal(await second.locator(".project-list textarea").count(), 0);
   await second.close();
   await page.screenshot({ path: "/tmp/azla-v03-meeting.png", fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });

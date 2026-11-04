@@ -5,10 +5,12 @@ export function MeetingText({
   value,
   previous,
   expanded = false,
+  prioritizeChanges = false,
 }: {
   value: string;
   previous?: string;
   expanded?: boolean;
+  prioritizeChanges?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [overflows, setOverflows] = useState(false);
@@ -33,10 +35,36 @@ export function MeetingText({
       .filter(Boolean),
   );
   const lines = value.split("\n");
-  const needsExpand = overflows || lines.length > 4 || value.length > 180;
+  const changedLines = lines.filter(
+    (line) => line.trim() && !oldLines.has(line.trim()),
+  );
+  const showingChanges =
+    prioritizeChanges &&
+    changed &&
+    changedLines.length > 0 &&
+    !open &&
+    !expanded;
+  const needsExpand =
+    open ||
+    showingChanges ||
+    overflows ||
+    lines.length > 4 ||
+    value.length > 180;
   return (
     <div className={`readable-text ${open || expanded ? "expanded" : ""}`}>
-      <div className="readable-lines" ref={body}>
+      {showingChanges && (
+        <div className="changed-excerpt">
+          {changedLines.slice(0, 3).map((line, i) => (
+            <p key={i} className="changed-line">
+              {line}
+            </p>
+          ))}
+        </div>
+      )}
+      <div
+        className={`readable-lines ${showingChanges ? "original-collapsed" : ""}`}
+        ref={body}
+      >
         {value ? (
           lines.map((line, i) => (
             <p
